@@ -1,6 +1,6 @@
 # aovpn
 
-This repository will be used to share sample Windows 10 Always On VPN ProfileXML files and various related configuraiton scripts.
+This repository will be used to share sample Windows 10 Always On VPN ProfileXML files.
 
 Enjoy!
 
