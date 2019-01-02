@@ -1,10 +1,3 @@
 # aovpn
 
-This repository will be used to share sample Windows 10 Always On VPN ProfileXML files.
-
-Enjoy!
-
-Richard Hicks  
-Founder and Principal Consultant  
-Richard M. Hicks Consulting, Inc.  
-https://directaccess.richardhicks.com/
+This repository includes sample ProfileXML configuration files used for creating Windows 10 Always On VPN connections.
