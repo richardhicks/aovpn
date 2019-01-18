@@ -1,0 +1,36 @@
+<VPNProfile>
+   <AlwaysOn>true</AlwaysOn>
+   <DeviceTunnel>true</DeviceTunnel>
+   <DnsSuffix>corp.example.net</DnsSuffix>
+   <!-- The RegisterDNS element is optional and used to register the IP address of the device tunnel VPN connection in internal DNS. If a user tunnel is deployed in conjuction with a device tunnel, this element should only be defined on the device tunnel -->
+   <RegisterDNS>true</RegisterDNS>
+   <TrustedNetworkDetection>corp.example.net</TrustedNetworkDetection>
+   <!-- The DomainNameInformation element is optional. It should only be used when the DNS servers configured on the VPN server's network interface can't resolve internal Active Directory hostnames -->
+   <!-- More information regarding DNS configuration for Always On VPN can be found here: https://directaccess.richardhicks.com/2018/05/29/always-on-vpn-client-dns-server-configuration/ -->
+   <DomainNameInformation>
+      <DomainName>.corp.example.net</DomainName>
+      <DnsServers>10.21.12.100,10.21.12.101</DnsServers>
+   </DomainNameInformation>
+   <NativeProfile>
+      <Servers>vpn.example.com</Servers>
+      <RoutingPolicyType>SplitTunnel</RoutingPolicyType>
+      <!-- Only IKEv2 is supported for use with the Always On VPN device tunnel -->
+	  <NativeProtocolType>IKEv2</NativeProtocolType>
+	  <!-- Only machine certificatea authentication is supported for use with the Always On VPN device tunnel -->
+      <Authentication>
+         <MachineMethod>Certificate</MachineMethod>
+      </Authentication>
+      <!-- This setting is optional but recommended -->
+	  <DisableClassBasedDefaultRoute>true</DisableClassBasedDefaultRoute>
+   </NativeProfile>
+   <!-- The Route setting is reuqired when DisableClassBasedDefaultRoute is set to "true" -->
+   <!-- Host routes (/32) should be used to restrict access over the device tunnel to domain controllers. Using traffic filters isn't recommended as it prevents outbound management -->
+   <Route>
+      <Address>10.21.12.100</Address>
+      <PrefixSize>32</PrefixSize>
+   </Route>
+   <Route>
+      <Address>10.21.12.101</Address>
+      <PrefixSize>32</PrefixSize>
+   </Route>
+</VPNProfile>
