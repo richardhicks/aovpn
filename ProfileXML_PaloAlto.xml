@@ -1,0 +1,33 @@
+<VPNProfile>
+   <AlwaysOn>true</AlwaysOn>
+   <RememberCredentials>true</RememberCredentials>
+   <DnsSuffix>corp.example.net</DnsSuffix>
+   <!-- The TrustedNetworkDetection element is optional and used to prevent the VPN connection from being established when the device is on the internal network -->
+   <TrustedNetworkDetection>corp.example.net</TrustedNetworkDetection>
+   <!-- The DomainNameInformation element is optional. It should only be used when the DNS servers configured on the VPN server's network interface can't resolve internal Active Directory hostnames -->
+   <!-- More information regarding DNS configuration for Always On VPN can be found here: https://directaccess.richardhicks.com/2018/05/29/always-on-vpn-client-dns-server-configuration/ -->
+   <DomainNameInformation>
+      <DomainName>.corp.example.net</DomainName>
+      <DnsServers>10.21.12.100,10.21.12.101</DnsServers>
+   </DomainNameInformation>
+   <PluginProfile>
+      <ServerUrlList>vpn.example.net</ServerUrlList>
+      <PluginPackageFamilyName>PaloAltoNetworks.GlobalProtect_rn9aeerfb38dg</PluginPackageFamilyName>
+      <CustomConfiguration>
+         <xml/>
+      </CustomConfiguration>
+   </PluginProfile>
+   <!-- All RFC 1918 private IP address networks are shown here as an example. -->
+   <Route>
+      <Address>10.0.0.0</Address>
+      <PrefixSize>8</PrefixSize>
+   </Route>
+   <Route>
+      <Address>172.16.0.0</Address>
+      <PrefixSize>12</PrefixSize>
+   </Route>
+   <Route>
+      <Address>192.168.0.0</Address>
+      <PrefixSize>16</PrefixSize>
+   </Route>
+</VPNProfile>
