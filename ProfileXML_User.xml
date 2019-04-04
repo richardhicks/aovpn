@@ -5,26 +5,26 @@
    <!-- The TrustedNetworkDetection element is optional and used to prevent the VPN connection from being established when the device is on the internal network -->
    <TrustedNetworkDetection>corp.example.net</TrustedNetworkDetection>
    <!-- The DomainNameInformation element is optional. It should only be used when the DNS servers configured on the VPN server's network interface can't resolve internal Active Directory hostnames -->
-   <!-- More information regarding DNS configuration for Always On VPN can be found here: https://directaccess.richardhicks.com/2018/05/29/always-on-vpn-client-dns-server-configuration/ -->
+   <!-- More information regarding DNS configuration for Always On VPN can be found here: https://rmhci.co/2M8EaIk -->
    <DomainNameInformation>
       <DomainName>.corp.example.net</DomainName>
       <DnsServers>10.21.12.100,10.21.12.101</DnsServers>
    </DomainNameInformation>
    <NativeProfile>
       <Servers>vpn.example.net</Servers>
-	  <!-- If NativeProtocolType is set to Automatic, SSTP will be used first. Details here: https://directaccess.richardhicks.com/2019/01/14/always-on-vpn-ikev2-and-sstp-fallback/ -->
+	  <!-- If NativeProtocolType is set to Automatic, SSTP will be used first. Details here: https://rmhci.co/2M8EaIk -->
       <NativeProtocolType>Automatic</NativeProtocolType>
       <Authentication>
          <UserMethod>Eap</UserMethod>
          <Eap>
-            <Configuration><!-- Use Get-EapConfiguration.ps1 (https://github.com/richardhicks/aovpn/blob/master/Get-EapConfiguration.ps1) to extract EAP configuration from existing connection and paste file contents here! --></Configuration>
+            <Configuration><!-- Use Get-EapConfiguration.ps1 (https://rmhci.co/2UqQ3jz) to extract EAP configuration from existing connection and paste file contents here! --></Configuration>
          </Eap>
       </Authentication>
       <RoutingPolicyType>SplitTunnel</RoutingPolicyType>
 	  <!-- The DisableClassBasedDefaultRoute setting is optional but recommended -->
       <DisableClassBasedDefaultRoute>true</DisableClassBasedDefaultRoute>
-	  <!-- The CryptographySuite setting is optional but recommended when using IKEv2. The default security settings for IKEv2 are extremely weak. Details here: https://directaccess.richardhicks.com/2018/12/10/always-on-vpn-ikev2-security-configuration/ -->
-	  <!-- Enabling this setting requires the VPN server to use matching settings. A PowerShell script to configure Windows Server RRAS servers can be found here: https://github.com/richardhicks/aovpn/blob/master/Set-IKEv2VpnSecurityBaseline.ps1 -->
+	  <!-- The CryptographySuite setting is optional but recommended when using IKEv2. The default security settings for IKEv2 are extremely weak. Details here: https://rmhci.co/2Eou3Op -->
+	  <!-- Enabling this setting requires the VPN server to use matching settings. A PowerShell script to configure Windows Server RRAS servers can be found here: https://rmhci.co/2WRpFgl -->
       <CryptographySuite>
          <AuthenticationTransformConstants>SHA256128</AuthenticationTransformConstants>
          <CipherTransformConstants>AES128</CipherTransformConstants>
