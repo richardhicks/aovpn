@@ -1,0 +1,12 @@
+ltm monitor http VPN_SSTP {
+    adaptive disabled
+    defaults-from http
+    destination *:http
+    interval 30
+    ip-dscp 0
+    recv "HTTP/1.1 401"
+    recv-disable none
+    send "HEAD /sra_{BA195980-CD49-458b-9E23-C84EE0ADCD75}/ HTTP/1.1\r\nHost:r\nConnection: Close\r\n\r\n"
+    time-until-up 0
+    timeout 90
+}
