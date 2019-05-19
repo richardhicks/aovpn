@@ -1,3 +1,5 @@
+# // custom F5 BIG-IP monitor for Windows Server RRAS SSTP offload (use HTTPS if offloading is not enabled)
+
 ltm monitor http VPN_SSTP {
     adaptive disabled
     defaults-from http
