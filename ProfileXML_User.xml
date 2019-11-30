@@ -34,7 +34,7 @@
          <PfsGroup>PFS2048</PfsGroup>
       </CryptographySuite>
    </NativeProfile>
-   <!-- The Route setting is reuqired when DisableClassBasedDefaultRoute is set to "true" -->
+   <!-- The Route setting is required when DisableClassBasedDefaultRoute is set to "true" -->
    <!-- All RFC 1918 private IP address networks are shown here as an example. -->
    <Route>
       <Address>10.0.0.0</Address>
