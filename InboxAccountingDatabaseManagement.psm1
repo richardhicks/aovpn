@@ -5,10 +5,10 @@
       Reports the size of the Remote Access Inbox Accounting database.
 
       .DESCRIPTION
-      This function connects to the Windows Internal Database (WID) in order to check the Remtoe Access Inbox Accounting database file sizes.
+      This function connects to the Windows Internal Database (WID) to check the Remtoe Access Inbox Accounting database file sizes.
 
       .EXAMPLE
-      Get-InboxAccountingDatabaseSize
+      .\Get-InboxAccountingDatabaseSize
 
       Reports the filesize for the Remote Access Inbox Accounting database files.
 
@@ -16,11 +16,11 @@
       Name:             Get-InboxAccountingDatabaseSize
       Author:           Javy de Koning
       Modified by:      Richard Hicks
-      Version:          1.1
+      Version:          1.11
       DateCreated:      October 4, 2016
-      DateUpdated:      March 12, 2020
+      DateUpdated:      March 22, 2020
       Original Source:  https://github.com/javydekoning/ShrinkDaDataBase
-      Website:          http://directaccess.richardhicks.com/
+      Website:          https://directaccess.richardhicks.com/
 
   #>
 
@@ -81,15 +81,15 @@ Function Compress-InboxAccountingDatabase {
       This function connects to the Windows Internal Database (WID) in order to compress the Remote Access Inbox Accounting database.
 
       .EXAMPLE
-      Compress-InboxAccountingDatabase
+      .\Compress-InboxAccountingDatabase
 
       .NOTES   
       Name:             Compress-InboxAccountingDatabase
       Author:           Javy de Koning
       Modified by:      Richard Hicks
-      Version:          1.1
+      Version:          1.11
       DateCreated:      October 4, 2016
-      DateUpdated:      March 12, 2020
+      DateUpdated:      March 22, 2020
       Original Source:  https://github.com/javydekoning/ShrinkDaDataBase
       Website:          http://directaccess.richardhicks.com/
 
@@ -140,12 +140,11 @@ Function Compress-InboxAccountingDatabase {
   }
 
 }
-
 # SIG # Begin signature block
 # MIINbAYJKoZIhvcNAQcCoIINXTCCDVkCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU7IM1ZRUjV+49SzaTJSmkKApP
-# 28qgggquMIIFMDCCBBigAwIBAgIQBAkYG1/Vu2Z1U0O1b5VQCDANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUHtqrldwilkLKdqZugv678dR1
+# nKigggquMIIFMDCCBBigAwIBAgIQBAkYG1/Vu2Z1U0O1b5VQCDANBgkqhkiG9w0B
 # AQsFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMTMxMDIyMTIwMDAwWhcNMjgxMDIyMTIwMDAwWjByMQsw
@@ -207,11 +206,11 @@ Function Compress-InboxAccountingDatabase {
 # Z2lDZXJ0IFNIQTIgQXNzdXJlZCBJRCBDb2RlIFNpZ25pbmcgQ0ECEAzkyhDXGglH
 # uQrfNWNuXYgwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAIoAKAAKECgAAw
 # GQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisG
-# AQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFLCAZzkjvDajwVtRyZj5V/i9iwb1MA0G
-# CSqGSIb3DQEBAQUABIIBAAk5bWvJfT23FbGb4FCrWtS2B9Oz3h/QenSsxPwkwCxu
-# p2K1kymR5WDpPeE3RzXMBlA6sM2Avf/SsUI4jJ0XwHZz/6cAG2n2QFPIuRmX/Ds7
-# h1nM5Jv8KVYO62781BoV3aNvv5iT9uuDkQODtyo6CC6HWb/i7yZ8lPt/7f08I7Zf
-# uyx6pH9lBoJmf/9wwSlcgttJlCF6xAwkEJU83sy6mAjkZjH+7JJaRJA0xEwRf+5J
-# 9oCIZSaCu4/yVCQLGj0+baIEK+ZTk635+06WpvfUHM+rB6CsFdEG96fviJmfLa9C
-# NW1pUgfa1SN1trmtK/QSv1R+Ip2ov+2bCpCNR68zBzM=
+# AQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFH2EX1oUAPNKlG1b1/937wbptUx0MA0G
+# CSqGSIb3DQEBAQUABIIBAFuNgfdQQ/9hEqRoatSgPA75nt2qnzeq7no9Eo9NK2Zw
+# wHaElqb94IIdVQoDQ+A3gIbotOGRZyGvXDZQYsMX1HLNwJSqOn8dvkLM2SWHv1j7
+# FEqlnOt8MH1N8bDSttKnYEgmAJJz0k2mSSeMnFIqLTptXT6NB7ltBVyTFZ6mJLac
+# 5IjaEy4QPMvPdYXUNVRR9kOVpQ8FSKYD4U60wllxydJsDYK80ST7haYHu+AOzdF4
+# UNsnoXLESCTwchuZ+vh289pwOidVrricrAwpUp0+k7h0s/HLgU8WEtOvud6sH/p9
+# G//9IJG9KzMCsyU0hPGlqBR2eA2MspwMqJj/iHHIbCM=
 # SIG # End signature block
