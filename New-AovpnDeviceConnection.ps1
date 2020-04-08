@@ -44,9 +44,8 @@ Param(
 
 # Script must be running in the context of the SYSTEM account to extract ProfileXML from a device tunnel connection. Validate user, exit if not running as SYSTEM.
 $CurrentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-$CurrentUserName = $CurrentPrincipal.Identities.Name
 
-If ($CurrentUserName -ne 'NT AUTHORITY\SYSTEM') {
+If ($CurrentPrincipal.Identities.IsSystem -ne $true) {
 
     Write-Warning 'This script is not running in the SYSTEM context, as required.'
     Write-Warning 'Use the Sysinternals tool Psexec.exe with the -i and -s parameters to run this script in the context of the local SYSTEM account.'
