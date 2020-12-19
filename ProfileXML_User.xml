@@ -1,6 +1,5 @@
 <VPNProfile>
    <AlwaysOn>true</AlwaysOn>
-   <RememberCredentials>true</RememberCredentials>
    <DnsSuffix>corp.example.net</DnsSuffix>
    <!-- The TrustedNetworkDetection element is optional and used to prevent the VPN connection from being established when the device is on the internal network. -->
    <TrustedNetworkDetection>corp.example.net</TrustedNetworkDetection>
