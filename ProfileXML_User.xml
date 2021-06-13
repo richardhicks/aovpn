@@ -48,4 +48,8 @@
       <Address>192.168.0.0</Address>
       <PrefixSize>16</PrefixSize>
    </Route>
+   <Route>
+      <Address>2001:db8:2112::</Address>
+      <PrefixSize>48</PrefixSize>
+   </Route>
 </VPNProfile>
