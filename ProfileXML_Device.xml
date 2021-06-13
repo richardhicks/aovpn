@@ -38,4 +38,8 @@
       <Address>10.21.12.101</Address>
       <PrefixSize>32</PrefixSize>
    </Route>
+      <Route>
+      <Address>2001:db8:2112:a867:5309:1843:6572:adfe</Address>
+      <PrefixSize>128</PrefixSize>
+   </Route>
 </VPNProfile>
