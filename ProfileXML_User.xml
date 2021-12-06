@@ -19,6 +19,8 @@
             <Configuration><!-- Use Get-EapConfiguration.ps1 (https://rmhci.co/2UqQ3jz) to extract EAP configuration from existing connection and paste file contents here! --></Configuration>
          </Eap>
       </Authentication>
+      <!-- The recommended routing policy type is SplitTunnel. However, ForceTunnel can be enabled if required. Details here: https://rmhci.co/2VrLDay. -->
+      <!-- If ForceTunnel is enabled, DisableClassBasedDefaultRoute must be set to 'false' or removed the element completely. Also, all Route entries must be removed. -->
       <RoutingPolicyType>SplitTunnel</RoutingPolicyType>
       <!-- The DisableClassBasedDefaultRoute setting is optional but recommended. -->
       <DisableClassBasedDefaultRoute>true</DisableClassBasedDefaultRoute>
