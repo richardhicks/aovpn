@@ -1,9 +1,9 @@
-# // custom F5 BIG-IP monitor for Windows Server RRAS SSTP offload (use HTTPS if offloading is not enabled)
+# // Custom F5 BIG-IP monitor for Windows Server RRAS SSTP (use HTTP if TLS offloading is enabled)
 
 ltm monitor http VPN_SSTP {
     adaptive disabled
-    defaults-from http
-    destination *:http
+    defaults-from https
+    destination *:https
     interval 30
     ip-dscp 0
     recv "HTTP/1.1 401"
