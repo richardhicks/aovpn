@@ -81,7 +81,7 @@ If ($AllUserConnection) {
 }
 
 If (!$CleanUpOnly) {  
-    // Remove VPN profile-
+    # // Remove VPN profile-
     If (!$AllUserConnection -and !$DeviceTunnel) {
         Try {
             # // Identify current user
