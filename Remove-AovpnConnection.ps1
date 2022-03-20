@@ -66,10 +66,11 @@ $NodeCSPURI = './Vendor/MSFT/VPNv2'
 $NamespaceName = 'root\cimv2\mdm\dmmap'
 $ClassName = 'MDM_VPNv2_01'
 
+$CurrentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+
 If ($AllUserConnection) {
 
     # // Script must be running in the context of the SYSTEM account. Validate user, exit if not running as SYSTEM
-    $CurrentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 
     If ($CurrentPrincipal.Identities.IsSystem -ne $true) {
 
