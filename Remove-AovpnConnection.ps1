@@ -87,6 +87,10 @@ If (!$CleanUpOnly) {
 
         If (!$AllUserConnection -and ($CurrentPrincipal.Identities.IsSystem -eq $true)) {
             $UserName = Get-WmiObject -Class Win32_ComputerSystem | Select-Object UserName
+            If ($Null -eq $UserName) {
+                Write-Warning "No user that is logged on to the console. Exiting script."
+                Exit
+            }
             $User = New-Object System.Security.Principal.NTAccount($UserName.UserName)
             $Sid = $User.Translate([System.Security.Principal.SecurityIdentifier])
             $SidValue = $Sid.Value
