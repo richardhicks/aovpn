@@ -82,26 +82,20 @@ If ($AllUserConnection) {
 
 If (!$CleanUpOnly) {  
     # // Remove VPN profile-
-    If (!$AllUserConnection -and !$DeviceTunnel) {
-        Try {
-            # // Identify current user
+    Try {
+        $Session = New-CimSession
+
+        If (!$AllUserConnection -and ($CurrentPrincipal.Identities.IsSystem -eq $true)) {
             $UserName = Get-WmiObject -Class Win32_ComputerSystem | Select-Object UserName
             $User = New-Object System.Security.Principal.NTAccount($UserName.UserName)
             $Sid = $User.Translate([System.Security.Principal.SecurityIdentifier])
             $SidValue = $Sid.Value
-            Write-Verbose "User SID is $SidValue."    
-        }   
-        Catch [Exception] {    
-            Write-Warning "$_"
-            Write-Warning "Unable to get user SID. User may be logged on over Remote Desktop. Exiting script."
-            Exit   
-        }
-    }
+            Write-Verbose "User SID is $SidValue."
 
-    Try {
-        $Session = New-CimSession
+            $options = New-Object Microsoft.Management.Infrastructure.Options.CimOperationOptions
+            $options.SetCustomOption('PolicyPlatformContext_PrincipalContext_Type', 'PolicyPlatform_UserContext', $false)
+            $options.SetCustomOption('PolicyPlatformContext_PrincipalContext_Id', "$SidValue", $false)
 
-        If (!$AllUserConnection -and !$DeviceTunnel) {
             $deleteInstances = $session.EnumerateInstances($namespaceName, $className, $options)
         } else {
             $deleteInstances = $session.EnumerateInstances($namespaceName, $className)
@@ -121,7 +115,7 @@ If (!$CleanUpOnly) {
     catch [Exception]
     {
         Write-Warning "$_"
-        $Message = "Unable to remove existing outdated instance(s) of $ProfileName profile"
+	$Message = "Unable to remove existing outdated instance(s) of $ProfileName profile"
         Write-Host "$Message"
         exit
     }
