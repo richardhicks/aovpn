@@ -115,7 +115,7 @@ If (!$CleanUpOnly) {
     catch [Exception]
     {
         Write-Warning "$_"
-	$Message = "Unable to remove existing outdated instance(s) of $ProfileName profile"
+        $Message = "Unable to remove existing outdated instance(s) of $ProfileName profile"
         Write-Host "$Message"
         exit
     }
