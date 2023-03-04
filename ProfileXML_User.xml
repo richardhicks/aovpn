@@ -9,6 +9,17 @@
       <DomainName>.corp.example.net</DomainName>
       <DnsServers>10.21.12.100,10.21.12.101</DnsServers>
    </DomainNameInformation>
+   <!-- The following settings are supported in Windows 11 22H2 and later. -->
+   <DisableAdvancedOptionsEditButton>true</DisableAdvancedOptionsEditButton>
+   <DisableDisconnectButton>true</DisableDisconnectButton>
+   <!-- The following settings are not currently supported in a public release of Windows. However, they are available in current Windows 11 Insider development channel builds. -->
+   <DataEncryption>Max</DataEncryption>
+   <DisableIKEv2Fragmentation>true</DisableIKEv2Fragmentation>
+   <IPv4InterfaceMetric>3</IPv4InterfaceMetric>
+   <IPv6InterfaceMetric>3</IPv6InterfaceMetric>
+   <NetworkOutageTime>0</NetworkOutageTime>
+   <UseRasCredentials>false</UseRasCredentials>
+   <!-- End settings -->
    <NativeProfile>
       <Servers>vpn.example.net</Servers>
       <!-- If NativeProtocolType is set to Automatic, SSTP will be used first. Details here: https://rmhci.co/2M8EaIk. -->
@@ -16,7 +27,7 @@
       <Authentication>
          <UserMethod>Eap</UserMethod>
          <Eap>
-            <Configuration><!-- Use Get-EapConfiguration.ps1 (https://rmhci.co/2UqQ3jz) to extract EAP configuration from existing connection and paste file contents here! --></Configuration>
+            <Configuration>               <!-- Use Get-EapConfiguration.ps1 (https://rmhci.co/2UqQ3jz) to extract EAP configuration from existing connection and paste file contents here! --></Configuration>
          </Eap>
       </Authentication>
       <!-- The recommended routing policy type is SplitTunnel. However, ForceTunnel can be enabled if required. Details here: https://rmhci.co/2VrLDay. -->
@@ -28,12 +39,12 @@
       <!-- Enabling this setting requires the VPN server to use matching settings. A PowerShell script to configure Windows Server RRAS servers can be found here: https://rmhci.co/2WRpFgl. -->
       <!-- The cryptography settings defined below are recommended minimum security baselines. They can be changed to meet higher level security requirements as required. -->
       <CryptographySuite>
-         <AuthenticationTransformConstants>SHA256128</AuthenticationTransformConstants>
-         <CipherTransformConstants>AES128</CipherTransformConstants>
-         <EncryptionMethod>AES128</EncryptionMethod>
+         <AuthenticationTransformConstants>GCMAES128</AuthenticationTransformConstants>
+         <CipherTransformConstants>GCMAES128</CipherTransformConstants>
+         <EncryptionMethod>AES_GCM_128</EncryptionMethod>
          <IntegrityCheckMethod>SHA256</IntegrityCheckMethod>
          <DHGroup>Group14</DHGroup>
-         <PfsGroup>PFS2048</PfsGroup>
+         <PfsGroup>ECP256</PfsGroup>
       </CryptographySuite>
    </NativeProfile>
    <!-- The Route setting is required when DisableClassBasedDefaultRoute is set to "true". -->
