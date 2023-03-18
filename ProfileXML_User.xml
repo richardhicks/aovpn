@@ -80,7 +80,7 @@
       </App>
       <Protocol>6</Protocol>
       <RemotePortRanges>3389</RemotePortRanges>
-      <RemoteAddressRanges>172.16.0.0.24</RemoteAddressRanges>
+      <RemoteAddressRanges>172.16.0.0/24</RemoteAddressRanges>
    </TrafficFilter>
    <!-- Traffic filter to restrict VPN client access to TCP port 3389 (Remote Desktop Protocol) to the 172.16.0.0/24 network, with application filter to restrict access to the Windows Store Remote Desktop client. -->
    <!-- Use the Get-AppxPackage PowerShell command to find the Package Family Name of the Windows Store client.  -->
