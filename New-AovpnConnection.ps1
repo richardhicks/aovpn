@@ -39,10 +39,13 @@
 .LINK
     https://docs.microsoft.com/en-us/windows-server/remote/remote-access/vpn/always-on-vpn/deploy/vpn-deploy-client-vpn-connections#bkmk_fullscript
 
+.LINK
+    https://directaccess.richardhicks.com/
+
 .NOTES
-    Version:            4.2.1
+    Version:            5.0
     Creation Date:      May 28, 2019
-    Last Updated:       November 2, 2022
+    Last Updated:       March 25, 2023
     Special Note:       This script adapted from guidance originally published by Microsoft.
     Original Author:    Microsoft Corporation
     Original Script:    https://docs.microsoft.com/en-us/windows-server/remote/remote-access/vpn/always-on-vpn/deploy/vpn-deploy-client-vpn-connections#bkmk_fullscript
@@ -91,18 +94,18 @@ If ($AllUserConnection -or $DeviceTunnel) {
     # // Script must be running in the context of the SYSTEM account to extract ProfileXML from a device tunnel connection. Validate user, exit if not running as SYSTEM.
     $CurrentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 
-    If ($CurrentPrincipal.Identities.IsSystem -ne $true) {
+    If ($CurrentPrincipal.Identities.IsSystem -ne $True) {
 
-        Write-Warning 'This script is not running in the SYSTEM context, as required. Exiting script.'
-        Exit
+        Write-Warning 'This script is not running in the SYSTEM context, as required.'
+        Return
 
     }
 
     # // Check for existing connection. Exit if exists.
     If (Get-VpnConnection -Name $ProfileName -AllUserConnection -ErrorAction SilentlyContinue) {
 
-        Write-Warning "The VPN profile ""$ProfileName"" already exists. Exiting script."
-        Exit
+        Write-Warning "The VPN profile ""$ProfileName"" already exists."
+        Return
 
     }
 
@@ -112,8 +115,8 @@ Else {
 
     If (Get-VpnConnection -Name $ProfileName -ErrorAction SilentlyContinue) {
 
-        Write-Warning "The VPN profile ""$ProfileName"" already exists. Exiting script."
-        Exit
+        Write-Warning "The VPN profile ""$ProfileName"" already exists."
+        Return
 
     }
 
@@ -126,8 +129,8 @@ If ($DeviceTunnel) {
 
     If (($Xml.VPNProfile.DeviceTunnel -eq 'False') -or ($Null -eq $Xml.VPNProfile.DeviceTunnel)) {
 
-        Write-Warning 'ProfileXML is not configured for a device tunnel. Exiting script.'
-        Exit
+        Write-Warning 'ProfileXML is not configured for a device tunnel.'
+        Return
 
     }
 
@@ -137,8 +140,8 @@ If (!$DeviceTunnel) {
 
     If ($Xml.VPNProfile.DeviceTunnel -eq 'True') {
 
-        Write-Warning 'ProfileXML is not configured for a user tunnel. Exiting script.'
-        Exit
+        Write-Warning 'ProfileXML is not configured for a user tunnel.'
+        Return
 
     }
 
@@ -148,10 +151,10 @@ If (!$DeviceTunnel) {
 $ProfileXML = Get-Content $xmlFilePath
 
 # // Escape spaces in profile name
-$ProfileNameEscaped = $ProfileName -replace ' ', '%20'
-$ProfileXML = $ProfileXML -replace '<', '&lt;'
-$ProfileXML = $ProfileXML -replace '>', '&gt;'
-$ProfileXML = $ProfileXML -replace '"', '&quot;'
+$ProfileNameEscaped = $ProfileName -Replace ' ', '%20'
+$ProfileXML = $ProfileXML -Replace '<', '&lt;'
+$ProfileXML = $ProfileXML -Replace '>', '&gt;'
+$ProfileXML = $ProfileXML -Replace '"', '&quot;'
 
 # // OMA URI information
 $NodeCSPURI = './Vendor/MSFT/VPNv2'
@@ -208,7 +211,7 @@ ForEach ($Item in $Tracked) {
 
 # // Remove registry artifacts from NetworkList\Profiles
 $Path = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkList\Profiles\'
-Write-Verbose "Searching $path for VPN profile ""$ProfileName""..."
+Write-Verbose "Searching $Path for VPN profile ""$ProfileName""..."
 $Key = Get-Childitem -Path $Path | Where-Object { (Get-ItemPropertyValue $_.PsPath -Name Description) -eq $ProfileName }
 
 If ($Key) {
@@ -274,19 +277,15 @@ If (!$AllUserConnection -and !$DeviceTunnel) {
     Try {
 
         # // Identify current user
-        $UserName = Get-CimInstance -ClassName Win32_ComputerSystem | Select-Object UserName
-        $User = New-Object System.Security.Principal.NTAccount($UserName.UserName)
-        $Sid = $User.Translate([System.Security.Principal.SecurityIdentifier])
-        $SidValue = $Sid.Value
-        Write-Verbose "User SID is $SidValue."
+        $Sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+        Write-Verbose "User SID is $Sid."
 
     }
 
-    Catch [Exception] {
+    Catch {
 
-        Write-Warning "$_"
-        Write-Warning "Unable to get user SID. User may be logged on over Remote Desktop. Exiting script."
-        Exit
+        Write-Warning $_.Exception.Message
+        Return
 
     }
 
@@ -297,7 +296,7 @@ $Session = New-CimSession
 Try {
 
     $NewInstance = New-Object Microsoft.Management.Infrastructure.CimInstance $ClassName, $NamespaceName
-    $Property = [Microsoft.Management.Infrastructure.CimProperty]::Create('ParentID', "$nodeCSPURI", 'String', 'Key')
+    $Property = [Microsoft.Management.Infrastructure.CimProperty]::Create('ParentID', "$NodeCSPURI", 'String', 'Key')
     $NewInstance.CimInstanceProperties.Add($Property)
     $Property = [Microsoft.Management.Infrastructure.CimProperty]::Create('InstanceID', "$ProfileNameEscaped", 'String', 'Key')
     $NewInstance.CimInstanceProperties.Add($Property)
@@ -308,7 +307,7 @@ Try {
 
         $Options = New-Object Microsoft.Management.Infrastructure.Options.CimOperationOptions
         $Options.SetCustomOption('PolicyPlatformContext_PrincipalContext_Type', 'PolicyPlatform_UserContext', $False)
-        $Options.SetCustomOption('PolicyPlatformContext_PrincipalContext_Id', "$SidValue", $False)
+        $Options.SetCustomOption('PolicyPlatformContext_PrincipalContext_Id', "$Sid", $False)
         $Session.CreateInstance($NamespaceName, $NewInstance, $Options)
 
     }
@@ -323,18 +322,18 @@ Try {
 
 }
 
-Catch [Exception] {
+Catch {
 
     Write-Output "Unable to create ""$ProfileName"" profile: $_"
-    Exit
+    Return
 
 }
 
 # SIG # Begin signature block
 # MIInGQYJKoZIhvcNAQcCoIInCjCCJwYCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUP0woK5QnF4eOqiWnMbDK5aXz
-# rCGggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUcXdC93bIXBzR8NDXof+vWCmK
+# qVeggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -514,30 +513,30 @@ Catch [Exception] {
 # U0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLqeeLTB6xEMAkGBSsOAwIaBQCgeDAY
 # BgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3
 # AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEW
-# BBQ6pCnlnSH/4nQ1sStZHHQbVnnq6DANBgkqhkiG9w0BAQEFAASCAYAMRL7THgTM
-# IrrChXZebcJmA9lB9tZkgzDxSODo6yKMflPS2jBBsbrYIG/Swp9HvPuuPnVbgju3
-# LBvlwryGIr6waRqkv18xfqH5HaxSIwMH40gCvc6aEhKkMl8pjdnM9wZ/flpEf19A
-# zLZ9YsitKI1cvVWf1G+fzt6B+M2Njdtaeu+PWmhiPWMe4NILmaqq5CfpW3P1Hqox
-# srcGZK74pzp1CabQ0LelXS9EAHJclFgm5emZ10jnrPTw0ZqVODZrN23QuhBfUImT
-# FkcSEEowK6f6wq7u8lJFR78iBGtJXZa2y1Djbd+DukiAPbHBNGUv015PFNn35lnW
-# Kg2kGfKTQeJ26OAiP3VXUQm/clJ1nMeIP1YCoglCZYyc99ge5zb05heFednqD3pC
-# Zz5siOFmp9PwI6tWghruokTrroZTTmU3kvJ8VxDcgz5pmI+gsOhRdJr+NPRQ5uJA
-# qCEcgjHJ2+uPKF55Oq7i1M5nfzOm+YFudcmx5MLosHda/3+GCCxkOxOhggMgMIID
+# BBTUI3GLRgoCqChe/ckwKdQvVXSvbDANBgkqhkiG9w0BAQEFAASCAYB0Q45/wWH0
+# dToCPDHYEgfNDZ8BX1pSCGofHbZQy+x5mnT2qsfI9CF29XwCet1abG8XC4d2O93b
+# FiGx/Vc4Ti/yQ48KEMCF+Yao1LUt/KcIo2nb0Ia5thtiDtGL4qE/nWadLBmdFzMB
+# yMJkwlwLubXlQ2/53MojilhiTml0HJBPPh+STF6y0vI5SxMRrDdNhyGU6d2ganjQ
+# yhndNK+e/Je/jtw9m9s/EJ8aXVL03ZdHaIIPsSuTY08CEiCLguzu2hZ+MpmUBTDV
+# IGekl3Tq9JHFg7Jcn73kHsJeQaBh+o3qORZxybXEVqyZmgcusW0bg9xV+ZxVkb2C
+# pv+8zgODiAxKgkbHBxbScXZfInlSSM53XT9IsTY7w6gsrv6HPjaXn3K0cS1ruIF5
+# 6RKwJ9dlE9W04qV7+9oc44UmsJcPomDB8idJaFM82XjHSBi0LdrVkNRm9wYmeiBp
+# LmrZPv+1dHiOxoCip5yY9qDOL6Ahu3Yj2DwIVXdJS6TQVMGikPkh3hWhggMgMIID
 # HAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBjMQswCQYDVQQGEwJVUzEXMBUGA1UE
 # ChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQg
 # UlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENBAhAMTWlyS5T6PCpKPSkHgD1a
 # MA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkq
-# hkiG9w0BCQUxDxcNMjIxMTAyMTcxNDM0WjAvBgkqhkiG9w0BCQQxIgQgud/a6oYN
-# RnoLvabI/DI3/VV/exrpmUWEPHVaEO8jaG4wDQYJKoZIhvcNAQEBBQAEggIAWYhV
-# oz3fxLSvmkwMCEQmIWDmiKKt7MPfV9QnuBvz3kWYQ6MWKLlhFdNT6vwdfTlYcChx
-# K0iCXKeaIpFVEqOqavHRDWDEyfb0QQiwfXNHR8TSPuU6wi0EK/Khg/dHMFhYv5JT
-# EY12RDK03kKjQWQp3kM8A3lhDN+vf794dUbBOryzQ6LQAKllbfJaVQPVlJNdNO61
-# +P6G5aMhuiFKHPacNuhqH0hE/CqoaZGqHTlzZJNNFMuztzqxDMW6eaVVQjIHB7Bo
-# IVYN5ZQiSMS3GuYR4xNAmgUzO9C2utZQu0iriFunPUPKkRs01oD6g3NgVbnbI7jt
-# nPJ3dJsHGSJA89JZ9pgqr4JyrrfJjkTjbIhNyFiWghSZKH9wUOLhK/3Q5h4yjV+N
-# 5xwjkm8ZZYiGAet4HdoMxaihvkiux4TGh7UPUlotxecqKEea5zyUr1rmCADyK3Lw
-# YetcfXK/MWjc8ArUbyvbwjMc89Y1abhIpb2EIs8PPL8T7HblmNGwzXmA16kTqMAn
-# 9jqsJOJu+tpLSGqvnWvyMz+Ewmj8Wbdj1YkDWaKKL4AxQT39Al7y0iD6EN5JmU2w
-# 4WmkL9xNL0H83T4y4D3u1pJkE0zdiLuQ/FnKQCZWcq8ZsW5DT9leiBnPcf33TW/S
-# pN3CThGut+ckS4VV6VdXZsS9jCDZSgtjersrexc=
+# hkiG9w0BCQUxDxcNMjMwMzI1MjEzNTMwWjAvBgkqhkiG9w0BCQQxIgQg8nFudiia
+# Ub5iejBc1//552u1LhX4u05kcujHfZNdRdYwDQYJKoZIhvcNAQEBBQAEggIAiY8Z
+# XbJNEgXp+/dvbkpmcw8zPImDsCkqEE2wl/2ZMjeNbpC4fVe+KdMhnXlKtnw8Jtn5
+# +EXVzQyk0FWZc5blez8QljCQkAK+lYWSJ6mvzRvIxzwh8vKOA4uaRf8+W5fM0P/i
+# +MOEL5/sI50SorJPt5RN7P2By7KSQg3qZqdRo5+slcrgxH2hT05t1EQNccNCjwgO
+# Fk9YGSNq7Ysn4IDZV0y5ddlP5HwQsr6LrvYZW8k8B38Y8XrH3R5H1UDh3DBYVenB
+# +1dsPHWozJ/LREv5UK1YJMeP/feayvphCGi51ooay2310tmyJHs9tPZW1wsav4pq
+# dcOtTw+9Fybov5IAD4aTCXfQdp9t+E1lb1tfUx1nLpJ/MOmB61MMl5vBrrnSlIMK
+# Xh/T6dD95ErOyTDCtnHEY3FYV8A3toyzAC1Fb9LoFQv+LGqPyK85jTHkCLu09bvN
+# uDMlkRZkx517Sac7wzUZy3AJA+pKhP1DluCgQSW71xoH4tg+RsdgnHOYindR3i6U
+# ueBH+Agn08JuuKTWzpb21HL1qhg0I2zbRi4XwC5XR0BZywnruDMePtgzNHZVjPhJ
+# 48Ovai4MqDTU8EQ/nwEK62UmAtGs0vz5HVzHcqLMp7eHSHKlrENHq5/r26m3UvQM
+# c0ugIHiSREp97B/PjOtrCx8kgqa17mAo2BmNlvU=
 # SIG # End signature block
