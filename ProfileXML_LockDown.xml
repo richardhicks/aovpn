@@ -1,0 +1,21 @@
+<VPNProfile>
+   <LockDown>true</LockDown>
+   <DnsSuffix>corp.example.net</DnsSuffix>
+   <TrustedNetworkDetection>corp.example.net</TrustedNetworkDetection>
+   <RegisterDNS>true</RegisterDNS>
+   <NativeProfile>
+      <Servers>vpn.example.net</Servers>
+      <NativeProtocolType>IKEv2</NativeProtocolType>
+      <Authentication>
+         <MachineMethod>Certificate</MachineMethod>
+      </Authentication>
+      <CryptographySuite>
+         <AuthenticationTransformConstants>GCMAES128</AuthenticationTransformConstants>
+         <CipherTransformConstants>GCMAES128</CipherTransformConstants>
+         <EncryptionMethod>AES_GCM_128</EncryptionMethod>
+         <IntegrityCheckMethod>SHA256</IntegrityCheckMethod>
+         <DHGroup>Group14</DHGroup>
+         <PfsGroup>ECP256</PfsGroup>
+      </CryptographySuite>
+   </NativeProfile>
+</VPNProfile>
