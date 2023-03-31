@@ -28,7 +28,7 @@
     Removes registry artifacts for an Always On VPN connection named 'Always On VPN' when the connection was removed manually.
 
 .DESCRIPTION
-    Removing an Always On VPN device tunnel or user tunnel connection requires more than just removing the connection itself. There are several locations in the registry that contain references to Always On VPN connections that are not removed when using the PowerShell Remove-VpnConnection command. This removes the VPN connection including all associated registry entries.
+    Removing an Always On VPN device tunnel or user tunnel connection requires more than just removing the VPN profile itself. Several locations in the registry contain references to Always On VPN connections that are not removed when using the Remove-VpnConnection PowerShell command. This PowerShell script removes the Always On VPN connection, including all associated registry entries.
 
 .LINK
     https://github.com/richardhicks/aovpn/blob/master/Remove-AovpnConnection.ps1
@@ -40,9 +40,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        4.0
+    Version:        4.1
     Creation Date:  August 23, 2020
-    Last Updated:   March 25, 2023
+    Last Updated:   March 31, 2023
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -64,18 +64,12 @@ Param (
 
 )
 
-# // Escape spaces in profile name
-$ProfileNameEscaped = $ProfileName -Replace ' ', '%20'
+# // Validate running under the SYSTEM context for device tunnel or all user connection configuration
+If ($DeviceTunnel -or $AllUserConnection) {
 
-# // OMA URI information
-$NamespaceName = 'root\cimv2\mdm\dmmap'
-$ClassName = 'MDM_VPNv2_01'
+    # // Script must be running in the context of the SYSTEM account to extract ProfileXML from a device tunnel connection. Validate user, exit if not running as SYSTEM
+    $CurrentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 
-$CurrentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-
-If ($AllUserConnection) {
-
-    # // Script must be running in the context of the SYSTEM account. Validate user, exit if not running as SYSTEM
     If ($CurrentPrincipal.Identities.IsSystem -ne $True) {
 
         Write-Warning 'This script is not running in the SYSTEM context, as required.'
@@ -83,7 +77,31 @@ If ($AllUserConnection) {
 
     }
 
+    # // Validate VPN connection
+    $Vpn = Get-VpnConnection -AllUserConnection -Name $ProfileName -ErrorAction SilentlyContinue
+
 }
+
+Else {
+
+    # // Validate VPN connection
+    $Vpn = Get-VpnConnection -Name $ProfileName -ErrorAction SilentlyContinue
+
+}
+
+If (($Null -eq $Vpn) -and (!($CleanUpOnly))) {
+
+    Write-Warning "The VPN connection ""$ProfileName"" does not exist."
+    Return
+
+}
+
+# // Escape spaces in profile name
+$ProfileNameEscaped = $ProfileName -Replace ' ', '%20'
+
+# // OMA URI information
+$NamespaceName = 'root\cimv2\mdm\dmmap'
+$ClassName = 'MDM_VPNv2_01'
 
 If (!$CleanUpOnly) {
 
@@ -135,7 +153,7 @@ If (!$CleanUpOnly) {
 
     }
 
-    Catch [Exception] {
+    Catch {
 
         Write-Warning $_.Exception.Message
         Write-Warning "Unable to remove VPN profile ""$ProfileName""."
@@ -267,8 +285,8 @@ Else {
 # SIG # Begin signature block
 # MIInGQYJKoZIhvcNAQcCoIInCjCCJwYCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUsP8/LUcsnwkn3fd7Xu77az91
-# XiKggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUe11TETaGtUzFGeu9yiQAegQg
+# aM+ggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -448,30 +466,30 @@ Else {
 # U0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLqeeLTB6xEMAkGBSsOAwIaBQCgeDAY
 # BgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3
 # AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEW
-# BBRt4/AOLQgZMES6AHMvjVIQtmFgpjANBgkqhkiG9w0BAQEFAASCAYCSAeWr+GFC
-# BdQhCFOl98KpIbR82WQMp2/dMaRbzd5lgr49ecxzgK3AWiKmFLrvu7Ja0ahW4zg6
-# 5I5X17m+rL2J9t5Wu45Cykq+f4yS/ATECkGKv0ISF93b/k8Nl0NO+njFQp4KW7Y7
-# 8ns7StXv7FOFpwlpdHqy7OVK0znYt7Nk2OPg6opFrI3qaFwkXSPn0iDWmmp2uoBf
-# HVSAUi5hIu7IaE0L/jJo0zwE6KIVtIytw1mjy201Fib+Rjou9XWPWUnpJ7k8yChN
-# KY18ktQnPBUo3rcJODr3/uRWllLkAdN1ZESplS1Gc98AWKQS+ubPQeCjO9+Ldkoq
-# 6/FizYAy0OMYlEGT/s0qE4WWUnmMmkTMXf1hd1NK08rwwGxcPoYJtfRhvdhW6CnZ
-# MQe1OT5toSIyhn+QIu4vywLrkpEB1Q19ixOUDCUkoe6QVjvJGSlY4w2cXcZVQbHl
-# Fw1VcxmXQP5HDARLDkHVhnLEhGp75779YScmvMOh7pg6tKY1PIsolUyhggMgMIID
+# BBQqZ9voc3yMUVn5rnSjVA2Bha1MxzANBgkqhkiG9w0BAQEFAASCAYCuJ1m1s8n0
+# p9igTsEqg+eMSQxxDM9hstAdBohutq2B6RNLSh7WVYogBVfuhkVGXnjOJlQU/dSm
+# OYRwhYPQeLneDZuJz5ykxmwU4RW+HwOyk1hOHbygCcWQTSb2wcxvbsqR3OPFd5LY
+# cCeT0iLJ3e1UkjV/OkR2p6m1W1Nwd5Xa/pgRzKUwWgemzu9qyov0nTQrG9NeMjAn
+# 4RbTxt6EbY7jRoByeajxaKO8/IxFOrHUG0acD/XqnVKd5dsnaqC7h4EayABPxerW
+# MpSZaeFWk+PobaJOEGPITVakKw7EMEHuwIh7bT0NTFa6WNXx5rqBvHMHEuoRxwJL
+# SIToiz3ZwKweGomV6KFvshcFRjUT9NapSm+Fm2r4H14yBkMnt+anfhVROMgnyl3x
+# wKwckNGA9s2c2MZHbEiQXvNgHuF1AG595SFkl78YnW7PFpaETh1ht/0vPXu7N9rl
+# oShX9K7/+KX1Ywh3S48NtHo9kqhHR7ewOLWfNdBlcC9U/Po4/PgRCxehggMgMIID
 # HAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBjMQswCQYDVQQGEwJVUzEXMBUGA1UE
 # ChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQg
 # UlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENBAhAMTWlyS5T6PCpKPSkHgD1a
 # MA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkq
-# hkiG9w0BCQUxDxcNMjMwMzI1MjEzNTQwWjAvBgkqhkiG9w0BCQQxIgQgIqMrMkbe
-# y6clnKeZX2Xwa3u4osgXvgw7pl/7Kfz4rVkwDQYJKoZIhvcNAQEBBQAEggIAXY38
-# uLdJnVijcaI6e0qYPq3T47aF9BcoRDYkI/mmWn8AttDZFoHHbBXKL1xNOC3+o4CD
-# sKnlmoXtF9ZsesXaNQ/5+sY0J47ORbHVb8x0fqmqYBqkBQ7wyVywc4J9nihPQkTM
-# uh98ulIoYZRpxGvo8KkUR/BQDbERPSX4Nk/HNM/6MA7eQ7oXX+FvuoFzV1Ny6Txb
-# linLKM7+cgFxlgAF5qDRMGwY+MjszbT7/yL+CiUyd4OQMUvicK6eqXJ40jzNAXap
-# RaDQBD7OdGkVtkFCQIzAO50RsZX2P9SaqzIJAn8+Jhyfv5jJujc16Jxq9Hl53f5I
-# ghPxbUPfQIQeco2qIoVTnDFGQe70tpJyTfDeoTF6cpb/L0XMlFyX6I4zZ7YbtM6Y
-# AxKz6QCHo5Uw23nlwYcw+AnVlXxwYAGc5cieXGt6eE7dgvy5MUFNXgcVonx3ThIh
-# OCQddmVxPHg6sZpgeeBb8HxdHuvE/bRmshZLtij1Shm4wRBftKm1Cj4ASt9mmF2u
-# EFj3FGpNIPcRfdeaRSivsAF+0+DfIcGKwsFMpRYDvojTGpjLinv7Cg37QHVBSXMg
-# JUNIjVbAIF/ZOfa40o/7NRbbxF0UsfPQjhoUL6ufhOMP8TlazRytCKTda8yZ5yay
-# q57OF/+0ElPb5CaP8rN5coe4Tu4QJx4v3qFbhTY=
+# hkiG9w0BCQUxDxcNMjMwMzMxMTY1ODM2WjAvBgkqhkiG9w0BCQQxIgQggckSj+zL
+# 8Nabg95XBCS0mJwh+JUDr4ltaa7f1lSLzuYwDQYJKoZIhvcNAQEBBQAEggIApcRv
+# o41u4vlIWUDzyxfI6vwxs1WliK1rQVafAQwXnBtvAdwZ4Yp4AYS7w6/F4fefztku
+# xCNyH0F+mOvbIhF+hxwp96yFAqd3xt6GgL152WdoEM0hf1F+nNJd8HVN56JQXDe3
+# 3/f9teEROuS1alpuOuRSyJ0ATn7a92LfOToRjv1yTlttMprpKFxWUEN8Rtghx4YU
+# CziU3/5qry1NbbF2I4qhX+alXmeuuHlQfkrfkxPwsPXAgB2+ueU+b8R1nMzOZSlv
+# 5ruiUvuInaAmzyT8H6g9xm6J/SqU5usYHlvM7r0SHMZBBI3Gazgl8q4OUwuOTIK7
+# L6z42hwhFBKyVw1pixCr0kCvUhBsRe1OdAFnzmG7oHKABjmcDW2Tl66rUZRwRqUL
+# kPtMKrpykQ7+kQsJ2f0gCSR14XEiTWR/ubwCSV9QSWMimFLm9T3OkhRqYiT9EwYy
+# NGSYDKwSmvNu6zm170s+s06fz1x2bUD9onAoeCyHP3XxLYYz6y6rU2ZZoJwTIsvu
+# 67ySAJzjcV2F+AyqUOXrrH/j+O1r6zsDZIQ9xzw4HgUcbvPRFsMi7dTXvR53uaoj
+# qkN2tiv9gfxpJXCQK3lHYXA5/01c3YkByJFsNT9I/sTZcDGHY4oRdtYYUGDebW3d
+# CdikQ3lCSVd9TFt5PUa6Uuejo5zmTHpF4rjub0Q=
 # SIG # End signature block
