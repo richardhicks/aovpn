@@ -1,6 +1,6 @@
 This file has been moved to the InboxAccountingDatabaseManagement PowerShell module.
 
-<a href="https://github.com/richardhicks/InboxAccountingDatabaseManagement">https://github.com/richardhicks/InboxAccountingDatabaseManagement</a>
+https://github.com/richardhicks/InboxAccountingDatabaseManagement
 
 https://www.powershellgallery.com/packages/InboxAccountingDatabaseManagement/
 
