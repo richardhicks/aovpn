@@ -14,7 +14,7 @@
    <DisableDisconnectButton>true</DisableDisconnectButton>
    <!-- The following settings are not currently supported in a public release of Windows. However, they are available in current Windows 11 Insider development channel builds. -->
    <DataEncryption>Max</DataEncryption>
-   <DisableIKEv2Fragmentation>true</DisableIKEv2Fragmentation>
+   <DisableIKEv2Fragmentation>false</DisableIKEv2Fragmentation>
    <IPv4InterfaceMetric>3</IPv4InterfaceMetric>
    <IPv6InterfaceMetric>3</IPv6InterfaceMetric>
    <NetworkOutageTime>0</NetworkOutageTime>
