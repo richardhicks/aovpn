@@ -1,0 +1,17 @@
+<VPNProfile>
+   <AlwaysOn>true</AlwaysOn>
+   <RememberCredentials>true</RememberCredentials>
+   <DnsSuffix>corp.example.net</DnsSuffix>
+   <TrustedNetworkDetection>corp.example.net</TrustedNetworkDetection>
+   <PluginProfile>
+      <ServerUrlList>vpn.example.net</ServerUrlList>
+      <PluginPackageFamilyName>FortinetInc.FortiClient_sq9g7krz3c65j</PluginPackageFamilyName>
+      <CustomConfiguration>
+         <xml />
+      </CustomConfiguration>
+   </PluginProfile>
+   <Route>
+      <Address>172.16.0.0</Address>
+      <PrefixSize>16</PrefixSize>
+   </Route>
+</VPNProfile>
