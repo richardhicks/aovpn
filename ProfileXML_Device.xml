@@ -2,15 +2,13 @@
    <AlwaysOn>true</AlwaysOn>
    <DeviceTunnel>true</DeviceTunnel>
    <DnsSuffix>corp.example.net</DnsSuffix>
-   <!-- The RegisterDNS element is optional and used to register the IP address of the device tunnel VPN connection in internal DNS. If a user tunnel is deployed in conjunction with a device tunnel, this element should only be defined on the device tunnel. -->
-   <RegisterDNS>true</RegisterDNS>
    <TrustedNetworkDetection>corp.example.net</TrustedNetworkDetection>
    <!-- The following settings are supported in Windows 11 22H2 and later. -->
    <DisableAdvancedOptionsEditButton>true</DisableAdvancedOptionsEditButton>
    <DisableDisconnectButton>true</DisableDisconnectButton>
    <!-- The following settings are not currently supported in a public release of Windows. However, they are available in current Windows 11 Insider development channel builds. -->
    <DataEncryption>Max</DataEncryption>
-   <DisableIKEv2Fragmentation>false</DisableIKEv2Fragmentation>
+   <DisableIKEv2Fragmentation>true</DisableIKEv2Fragmentation>
    <IPv4InterfaceMetric>3</IPv4InterfaceMetric>
    <IPv6InterfaceMetric>3</IPv6InterfaceMetric>
    <NetworkOutageTime>0</NetworkOutageTime>
@@ -26,19 +24,19 @@
       <Authentication>
          <MachineMethod>Certificate</MachineMethod>
       </Authentication>
-      <!-- This setting is optional but recommended. -->
-      <DisableClassBasedDefaultRoute>true</DisableClassBasedDefaultRoute>
       <!-- The CryptographySuite setting is optional but recommended when using IKEv2. The default security settings for IKEv2 are extremely weak. Details here: https://rmhci.co/2Eou3Op. -->
       <!-- Enabling this setting requires the VPN server to use matching settings. A PowerShell script to configure Windows Server RRAS servers can be found here: https://rmhci.co/2WRpFgl. -->
       <!-- The cryptography settings defined below are recommended minimum security baselines. They can be changed to meet higher level security requirements as required. -->
       <CryptographySuite>
          <AuthenticationTransformConstants>GCMAES128</AuthenticationTransformConstants>
          <CipherTransformConstants>GCMAES128</CipherTransformConstants>
-         <EncryptionMethod>AES_GCM_128</EncryptionMethod>
-         <IntegrityCheckMethod>SHA256</IntegrityCheckMethod>
-         <DHGroup>Group14</DHGroup>
          <PfsGroup>ECP256</PfsGroup>
+         <DHGroup>Group14</DHGroup>
+         <IntegrityCheckMethod>SHA256</IntegrityCheckMethod>
+         <EncryptionMethod>AES_GCM_128</EncryptionMethod>
       </CryptographySuite>
+      <!-- This setting is optional but recommended. -->
+      <DisableClassBasedDefaultRoute>true</DisableClassBasedDefaultRoute>
    </NativeProfile>
    <!-- The Route setting is required when DisableClassBasedDefaultRoute is set to "true". -->
    <!-- Host routes (/32 or /128) should be used to restrict access over the device tunnel to domain controllers. Using traffic filters is not recommended prior to Windows 10 2004 as it prevents outbound management. -->
@@ -54,4 +52,6 @@
       <Address>2001:db8:2112:a867:5309:1843:6572:adfe</Address>
       <PrefixSize>128</PrefixSize>
    </Route>
+   <!-- The RegisterDNS element is optional and used to register the IP address of the device tunnel VPN connection in internal DNS. If a user tunnel is deployed in conjunction with a device tunnel, this element should only be defined on the device tunnel. -->
+   <RegisterDNS>true</RegisterDNS>   
 </VPNProfile>

@@ -14,7 +14,7 @@
    <DisableDisconnectButton>true</DisableDisconnectButton>
    <!-- The following settings are not currently supported in a public release of Windows. However, they are available in current Windows 11 Insider development channel builds. -->
    <DataEncryption>Max</DataEncryption>
-   <DisableIKEv2Fragmentation>false</DisableIKEv2Fragmentation>
+   <DisableIKEv2Fragmentation>true</DisableIKEv2Fragmentation>
    <IPv4InterfaceMetric>3</IPv4InterfaceMetric>
    <IPv6InterfaceMetric>3</IPv6InterfaceMetric>
    <NetworkOutageTime>0</NetworkOutageTime>
@@ -26,6 +26,8 @@
       <NativeProtocolType>Automatic</NativeProtocolType>
       <Authentication>
          <UserMethod>Eap</UserMethod>
+         <!-- The machine EAP method must be present when deploying XML with Intune to Windows 11 devices -->
+         <MachineMethod>Eap</MachineMethod>
          <Eap>
             <Configuration>               <!-- Use Get-EapConfiguration.ps1 (https://rmhci.co/2UqQ3jz) to extract EAP configuration from existing connection and paste file contents here! --></Configuration>
          </Eap>
@@ -33,18 +35,18 @@
       <!-- The recommended routing policy type is SplitTunnel. However, ForceTunnel can be enabled if required. Details here: https://rmhci.co/2VrLDay. -->
       <!-- If ForceTunnel is enabled, DisableClassBasedDefaultRoute must be set to 'false' or removed the element completely. Also, all Route entries must be removed. -->
       <RoutingPolicyType>SplitTunnel</RoutingPolicyType>
-      <!-- The DisableClassBasedDefaultRoute setting is optional but recommended. -->
-      <DisableClassBasedDefaultRoute>true</DisableClassBasedDefaultRoute>
       <!-- The CryptographySuite setting is optional but recommended when using IKEv2. The default security settings for IKEv2 are extremely weak. Details here: https://rmhci.co/2Eou3Op. -->
       <!-- Enabling this setting requires the VPN server to use matching settings. A PowerShell script to configure Windows Server RRAS servers can be found here: https://rmhci.co/2WRpFgl. -->
       <!-- The cryptography settings defined below are recommended minimum security baselines. They can be changed to meet higher level security requirements as required. -->
       <CryptographySuite>
          <AuthenticationTransformConstants>GCMAES128</AuthenticationTransformConstants>
          <CipherTransformConstants>GCMAES128</CipherTransformConstants>
-         <EncryptionMethod>AES_GCM_128</EncryptionMethod>
-         <IntegrityCheckMethod>SHA256</IntegrityCheckMethod>
-         <DHGroup>Group14</DHGroup>
          <PfsGroup>ECP256</PfsGroup>
+         <DHGroup>Group14</DHGroup>
+         <IntegrityCheckMethod>SHA256</IntegrityCheckMethod>
+         <EncryptionMethod>AES_GCM_128</EncryptionMethod>
+      <!-- The DisableClassBasedDefaultRoute setting is optional but recommended. -->
+      <DisableClassBasedDefaultRoute>true</DisableClassBasedDefaultRoute>
       </CryptographySuite>
    </NativeProfile>
    <!-- The Route setting is required when DisableClassBasedDefaultRoute is set to "true". -->
@@ -113,4 +115,6 @@
       <RemotePortRanges>80,443</RemotePortRanges>
       <RemoteAddressRanges>172.16.0.204,172.16.0.205,172.16.0.6</RemoteAddressRanges>
    </TrafficFilter>
+   <!-- Optional setting to register the endpoint's IP address in internal DNS. When used with the device tunnel use this setting on one connection or the other, not both. -->
+   <RegisterDNS>true</RegisterDNS>
 </VPNProfile>
