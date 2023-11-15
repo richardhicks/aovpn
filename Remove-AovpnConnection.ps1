@@ -40,13 +40,13 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        4.1
+    Version:        4.2
     Creation Date:  August 23, 2020
-    Last Updated:   March 31, 2023
+    Last Updated:   November 15, 2023
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
-    Web Site:       https://www.richardhicks.com/
+    Website:        https://www.richardhicks.com/
 
 #>
 
@@ -54,98 +54,245 @@
 
 Param (
 
-    [Parameter(Mandatory, HelpMessage = 'Enter the name of the VPN profile to remove.')]
+    [Parameter(Mandatory, ValueFromPipelineByPropertyName, HelpMessage = 'Enter the name of the VPN profile to remove.')]
     [ValidateNotNullOrEmpty()]
-    [Alias("Name", "ConnectionName")]
+    [Alias('Name', 'ConnectionName')]
     [string]$ProfileName,
-    [Alias("DeviceTunnel")]
+    [switch]$DeviceTunnel,
     [switch]$AllUserConnection,
     [switch]$CleanUpOnly
 
 )
 
-# // Validate running under the SYSTEM context for device tunnel or all user connection configuration
-If ($DeviceTunnel -or $AllUserConnection) {
+Process {
 
-    # // Script must be running in the context of the SYSTEM account to extract ProfileXML from a device tunnel connection. Validate user, exit if not running as SYSTEM
-    $CurrentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+    # Validate running under the SYSTEM context for device tunnel or all user connection configuration
+    If ($DeviceTunnel -or $AllUserConnection) {
 
-    If ($CurrentPrincipal.Identities.IsSystem -ne $True) {
+        # Script must be running in the context of the SYSTEM account to extract ProfileXML from a device tunnel connection. Validate user, exit if not running as SYSTEM
+        $CurrentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 
-        Write-Warning 'This script is not running in the SYSTEM context, as required.'
+        If ($CurrentPrincipal.Identities.IsSystem -ne $True) {
+
+            Write-Warning 'This script is not running in the SYSTEM context, as required.'
+            Return
+
+        }
+
+        # Validate VPN connection
+        $Vpn = Get-VpnConnection -AllUserConnection -Name $ProfileName -ErrorAction SilentlyContinue
+
+    }
+
+    Else {
+
+        # Validate VPN connection
+        $Vpn = Get-VpnConnection -Name $ProfileName -ErrorAction SilentlyContinue
+
+    }
+
+    If (($Null -eq $Vpn) -and (!($CleanUpOnly))) {
+
+        Write-Warning "The VPN connection ""$ProfileName"" does not exist."
         Return
 
     }
 
-    # // Validate VPN connection
-    $Vpn = Get-VpnConnection -AllUserConnection -Name $ProfileName -ErrorAction SilentlyContinue
+    # Escape spaces in profile name
+    $ProfileNameEscaped = $ProfileName -Replace ' ', '%20'
 
-}
+    # OMA URI information
+    $NamespaceName = 'root\cimv2\mdm\dmmap'
+    $ClassName = 'MDM_VPNv2_01'
 
-Else {
+    If (!$CleanUpOnly) {
 
-    # // Validate VPN connection
-    $Vpn = Get-VpnConnection -Name $ProfileName -ErrorAction SilentlyContinue
+        # Search for and remove matching VPN profile
+        Try {
 
-}
+            $Session = New-CimSession
 
-If (($Null -eq $Vpn) -and (!($CleanUpOnly))) {
+            If (!$AllUserConnection -and ($CurrentPrincipal.Identities.IsSystem -eq $True)) {
 
-    Write-Warning "The VPN connection ""$ProfileName"" does not exist."
-    Return
+                $Sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+                Write-Verbose "User SID is $Sid."
 
-}
+                $Options = New-Object Microsoft.Management.Infrastructure.Options.CimOperationOptions
+                $Options.SetCustomOption('PolicyPlatformContext_PrincipalContext_Type', 'PolicyPlatform_UserContext', $False)
+                $Options.SetCustomOption('PolicyPlatformContext_PrincipalContext_Id', "$Sid", $False)
 
-# // Escape spaces in profile name
-$ProfileNameEscaped = $ProfileName -Replace ' ', '%20'
-
-# // OMA URI information
-$NamespaceName = 'root\cimv2\mdm\dmmap'
-$ClassName = 'MDM_VPNv2_01'
-
-If (!$CleanUpOnly) {
-
-    # // Search for and remove matching VPN profile
-    Try {
-
-        $Session = New-CimSession
-
-        If (!$AllUserConnection -and ($CurrentPrincipal.Identities.IsSystem -eq $True)) {
-
-            $Sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-            Write-Verbose "User SID is $Sid."
-
-            $Options = New-Object Microsoft.Management.Infrastructure.Options.CimOperationOptions
-            $Options.SetCustomOption('PolicyPlatformContext_PrincipalContext_Type', 'PolicyPlatform_UserContext', $False)
-            $Options.SetCustomOption('PolicyPlatformContext_PrincipalContext_Id', "$Sid", $False)
-
-            $DeleteInstances = $Session.EnumerateInstances($NamespaceName, $ClassName, $Options)
-
-        }
-
-        Else {
-
-            $DeleteInstances = $Session.EnumerateInstances($NamespaceName, $ClassName)
-
-        }
-
-        Write-Verbose "Searching for VPN profile ""$ProfileName""..."
-
-        ForEach ($DeleteInstance in $DeleteInstances) {
-
-            $InstanceId = $DeleteInstance.InstanceID
-
-            If ("$InstanceId" -eq "$ProfileNameEscaped") {
-
-                Write-Verbose "Removing VPN connection ""$ProfileName""..."
-                $Session.DeleteInstance($NamespaceName, $DeleteInstance, $Options)
-                $ProfileRemoved = $True
+                $DeleteInstances = $Session.EnumerateInstances($NamespaceName, $ClassName, $Options)
 
             }
 
             Else {
 
-                Write-Verbose "Ignoring existing VPN profile ""$InstanceId""..."
+                $DeleteInstances = $Session.EnumerateInstances($NamespaceName, $ClassName)
+
+            }
+
+            Write-Verbose "Searching for VPN profile ""$ProfileName""..."
+
+            ForEach ($DeleteInstance in $DeleteInstances) {
+
+                $InstanceId = $DeleteInstance.InstanceID
+
+                If ("$InstanceId" -eq "$ProfileNameEscaped") {
+
+                    Write-Verbose "Removing VPN connection ""$ProfileName""..."
+                    $Session.DeleteInstance($NamespaceName, $DeleteInstance, $Options)
+                    $ProfileRemoved = $True
+
+                }
+
+                Else {
+
+                    Write-Verbose "Ignoring existing VPN profile ""$InstanceId""..."
+
+                }
+
+            }
+
+        }
+
+        Catch {
+
+            Write-Warning $_.Exception.Message
+            Write-Warning "Unable to remove VPN profile ""$ProfileName""."
+            Return
+
+        }
+
+    }
+
+    If ($ProfileRemoved -or $CleanUpOnly) {
+
+        # Registry clean-up
+        Write-Verbose "Cleaning up registry artifacts for VPN connection ""$ProfileName""..."
+
+        # Remove registry artifacts from ERM\Tracked
+        Write-Verbose "Searching ERM\Tracked for profile ""$ProfileNameEscaped""..."
+
+        $BasePath = "HKLM:\SOFTWARE\Microsoft\EnterpriseResourceManager\Tracked"
+        $Tracked = Get-ChildItem -Path $BasePath
+
+        ForEach ($Item in $Tracked) {
+
+            Write-Verbose "Processing $(Convert-Path $Item.PsPath)..."
+            $Key = Get-ChildItem $Item.PsPath -Recurse | Where-Object { $_ | Get-ItemProperty -Include "Path*" }
+            $PathCount = ($Key.Property -Match "Path\d+").Count
+            Write-Verbose "Found a total of $PathCount ERM\Tracked entries."
+
+            # There may be more than 1 matching key
+            ForEach ($K in $Key) {
+
+                $Path = $K.Property | Where-Object { $_ -Match "Path\d+" }
+                $Count = $Path.Count
+                Write-Verbose "Found $Count entries under $($K.Name)."
+
+                ForEach ($P in $Path) {
+
+                    Write-Verbose "Testing $P..."
+                    $Value = $K.GetValue($P)
+
+                    If ($Value -Match "$($ProfileNameEscaped)$") {
+
+                        Write-Verbose "Removing $Value under $($K.Name)..."
+                        $K | Remove-ItemProperty -Name $P
+
+                        # Decrement count
+                        $Count--
+
+                    }
+
+                } # ForEach $P in $Path
+
+                #  // Update count
+                Write-Verbose "Setting count to $Count..."
+                $K | Set-ItemProperty -Name Count -Value $Count
+
+            } # ForEach $K in $Key
+
+        } # ForEach $Item in $Tracked
+
+        # Remove registry artifacts from NetworkList\Profiles
+        $Path = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkList\Profiles\'
+        Write-Verbose "Searching $Path for VPN profile ""$ProfileName""..."
+        $Key = Get-Childitem -Path $Path | Where-Object { (Get-ItemPropertyValue $_.PsPath -Name Description) -eq $ProfileName }
+
+        If ($Key) {
+
+            Write-Verbose "Removing $($Key.Name)..."
+            $Key | Remove-Item
+
+        }
+
+        Else {
+
+            Write-Verbose "No profiles found matching ""$ProfileName"" in the network list."
+
+        }
+
+        # Remove registry artifacts from RasMan\Config
+        $Path = 'HKLM:\SYSTEM\CurrentControlSet\Services\RasMan\Config\'
+        $Name = 'AutoTriggerDisabledProfilesList'
+
+        Write-Verbose "Searching $Name under $Path for VPN profile ""$ProfileName""..."
+
+        Try {
+
+            # Get the current registry values as an array of strings
+            [string[]]$Current = Get-ItemPropertyValue -Path $Path -Name $Name -ErrorAction Stop
+
+        }
+
+        Catch {
+
+            Write-Verbose "$Name does not exist under $Path. No action required."
+
+        }
+
+        If ($Current) {
+
+            # Create ordered hashtable
+            $List = [Ordered]@{}
+            $Current | ForEach-Object { $List.Add("$($_.ToLower())", $_) }
+
+            # Search hashtable for matching VPN profile and remove if present
+            If ($List.Contains($ProfileName)) {
+
+                Write-Verbose "Profile found in AutoTriggerDisabledProfilesList. Removing entry..."
+                $List.Remove($ProfileName)
+                Write-Verbose "Updating the registry..."
+                Set-ItemProperty -Path $Path -Name $Name -Value $List.Values
+
+            }
+
+        }
+
+        Else {
+
+            Write-Verbose "No profiles found matching ""$ProfileName"" in the AutoTriggerDisabledProfilesList registry key."
+
+        }
+
+        # Remove registry artifacts from RasMan\DeviceTunnel
+        If ($DeviceTunnel) {
+
+            Write-Verbose 'Searching for entries in RasMan\DeviceTunnel...'
+            $Path = 'HKLM:\SYSTEM\CurrentControlSet\Services\RasMan\DeviceTunnel\'
+
+            If (Test-Path -Path $Path) {
+
+                Write-Verbose 'RasMan\DeviceTunnel found. Removing registry key...'
+                $Path = Get-Item -Path $Path
+                Remove-Item -Path $Path.PsPath -Recurse -Force
+
+            }
+
+            Else {
+
+                Write-Verbose 'RasMan\DeviceTunnel not found. No action required.'
 
             }
 
@@ -153,140 +300,19 @@ If (!$CleanUpOnly) {
 
     }
 
-    Catch {
-
-        Write-Warning $_.Exception.Message
-        Write-Warning "Unable to remove VPN profile ""$ProfileName""."
-        Return
-
-    }
-
-}
-
-If ($ProfileRemoved -or $CleanUpOnly) {
-
-    # // Registry clean-up
-    Write-Verbose "Cleaning up registry artifacts for VPN connection ""$ProfileName""..."
-
-    # // Remove registry artifacts from ERM\Tracked
-    Write-Verbose "Searching ERM\Tracked for profile ""$ProfileNameEscaped""..."
-
-    $BasePath = "HKLM:\SOFTWARE\Microsoft\EnterpriseResourceManager\Tracked"
-    $Tracked = Get-ChildItem -Path $BasePath
-
-    ForEach ($Item in $Tracked) {
-
-        Write-Verbose "Processing $(Convert-Path $Item.PsPath)..."
-        $Key = Get-ChildItem $Item.PsPath -Recurse | Where-Object { $_ | Get-ItemProperty -Include "Path*" }
-        $PathCount = ($Key.Property -Match "Path\d+").Count
-        Write-Verbose "Found a total of $PathCount ERM\Tracked entries."
-
-        # // There may be more than 1 matching key
-        ForEach ($K in $Key) {
-
-            $Path = $K.Property | Where-Object { $_ -Match "Path\d+" }
-            $Count = $Path.Count
-            Write-Verbose "Found $Count entries under $($K.Name)."
-
-            ForEach ($P in $Path) {
-
-                Write-Verbose "Testing $P..."
-                $Value = $K.GetValue($P)
-
-                If ($Value -Match "$($ProfileNameEscaped)$") {
-
-                    Write-Verbose "Removing $Value under $($K.Name)..."
-                    $K | Remove-ItemProperty -Name $P
-
-                    # // Decrement count
-                    $Count--
-
-                }
-
-            } # // ForEach $P in $Path
-
-            #  // Update count
-            Write-Verbose "Setting count to $Count..."
-            $K | Set-ItemProperty -Name Count -Value $Count
-
-        } # // ForEach $K in $Key
-
-    } # // ForEach $Item in $Tracked
-
-    # // Remove registry artifacts from NetworkList\Profiles
-    $Path = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkList\Profiles\'
-    Write-Verbose "Searching $path for VPN profile ""$ProfileName""..."
-    $Key = Get-Childitem -Path $Path | Where-Object { (Get-ItemPropertyValue $_.PsPath -Name Description) -eq $ProfileName }
-
-    If ($Key) {
-
-        Write-Verbose "Removing $($Key.Name)..."
-        $Key | Remove-Item
-
-    }
-
     Else {
 
-        Write-Verbose "No profiles found matching ""$ProfileName"" in the network list."
+        Write-Verbose "VPN profile ""$ProfileName"" not found."
 
     }
-
-    # // Remove registry artifacts from RasMan\Config
-    $Path = 'HKLM:\System\CurrentControlSet\Services\RasMan\Config\'
-    $Name = 'AutoTriggerDisabledProfilesList'
-
-    Write-Verbose "Searching $Name under $Path for VPN profile ""$ProfileName""..."
-
-    Try {
-
-        # // Get the current registry values as an array of strings
-        [string[]]$Current = Get-ItemPropertyValue -Path $Path -Name $Name -ErrorAction Stop
-
-    }
-
-    Catch {
-
-        Write-Verbose "$Name does not exist under $Path. No action required."
-
-    }
-
-    If ($Current) {
-
-        #// Create ordered hashtable
-        $List = [Ordered]@{}
-        $Current | ForEach-Object { $List.Add("$($_.ToLower())", $_) }
-
-        # //Search hashtable for matching VPN profile and remove if present
-        If ($List.Contains($ProfileName)) {
-
-            Write-Verbose "Profile found in AutoTriggerDisabledProfilesList. Removing entry..."
-            $List.Remove($ProfileName)
-            Write-Verbose "Updating the registry..."
-            Set-ItemProperty -Path $Path -Name $Name -Value $List.Values
-
-        }
-
-    }
-
-    Else {
-
-        Write-Verbose "No profiles found matching ""$ProfileName"" in the AutoTriggerDisabledProfilesList registry key."
-
-    }
-
-}
-
-Else {
-
-    Write-Verbose "VPN profile ""$ProfileName"" not found."
 
 }
 
 # SIG # Begin signature block
-# MIInGQYJKoZIhvcNAQcCoIInCjCCJwYCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
+# MIInGwYJKoZIhvcNAQcCoIInDDCCJwgCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUe11TETaGtUzFGeu9yiQAegQg
-# aM+ggiDBMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUdaX7baGSl/Nf8LBnVnKYQWci
+# h3KggiDDMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0B
 # AQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQsw
@@ -387,109 +413,109 @@ Else {
 # 443wFSjO7fEYVgcqLxDEDAhkPDOPriiMPMuPiAsNvzv0zh57ju+168u38HcT5uco
 # P6wSrqUvImxB+YJcFWbMbA7KxYbD9iYzDAdLoNMHAmpqQDBISzSoUSC7rRuFCOJZ
 # DW3KBVAr6kocnqX9oKcfBnTn8tZSkP2vhUgh+Vc7tJwD7YZF9LRhbr9o4iZghurI
-# r6n+lB3nYxs6hlZ4TjCCBsAwggSooAMCAQICEAxNaXJLlPo8Kko9KQeAPVowDQYJ
+# r6n+lB3nYxs6hlZ4TjCCBsIwggSqoAMCAQICEAVEr/OUnQg5pr/bP1/lYRYwDQYJ
 # KoZIhvcNAQELBQAwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJ
 # bmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJTQTQwOTYgU0hBMjU2
-# IFRpbWVTdGFtcGluZyBDQTAeFw0yMjA5MjEwMDAwMDBaFw0zMzExMjEyMzU5NTla
-# MEYxCzAJBgNVBAYTAlVTMREwDwYDVQQKEwhEaWdpQ2VydDEkMCIGA1UEAxMbRGln
-# aUNlcnQgVGltZXN0YW1wIDIwMjIgLSAyMIICIjANBgkqhkiG9w0BAQEFAAOCAg8A
-# MIICCgKCAgEAz+ylJjrGqfJru43BDZrboegUhXQzGias0BxVHh42bbySVQxh9J0J
-# dz0Vlggva2Sk/QaDFteRkjgcMQKW+3KxlzpVrzPsYYrppijbkGNcvYlT4DotjIdC
-# riak5Lt4eLl6FuFWxsC6ZFO7KhbnUEi7iGkMiMbxvuAvfTuxylONQIMe58tySSge
-# TIAehVbnhe3yYbyqOgd99qtu5Wbd4lz1L+2N1E2VhGjjgMtqedHSEJFGKes+JvK0
-# jM1MuWbIu6pQOA3ljJRdGVq/9XtAbm8WqJqclUeGhXk+DF5mjBoKJL6cqtKctvdP
-# bnjEKD+jHA9QBje6CNk1prUe2nhYHTno+EyREJZ+TeHdwq2lfvgtGx/sK0YYoxn2
-# Off1wU9xLokDEaJLu5i/+k/kezbvBkTkVf826uV8MefzwlLE5hZ7Wn6lJXPbwGqZ
-# IS1j5Vn1TS+QHye30qsU5Thmh1EIa/tTQznQZPpWz+D0CuYUbWR4u5j9lMNzIfMv
-# wi4g14Gs0/EH1OG92V1LbjGUKYvmQaRllMBY5eUuKZCmt2Fk+tkgbBhRYLqmgQ8J
-# JVPxvzvpqwcOagc5YhnJ1oV/E9mNec9ixezhe7nMZxMHmsF47caIyLBuMnnHC1mD
-# jcbu9Sx8e47LZInxscS451NeX1XSfRkpWQNO+l3qRXMchH7XzuLUOncCAwEAAaOC
-# AYswggGHMA4GA1UdDwEB/wQEAwIHgDAMBgNVHRMBAf8EAjAAMBYGA1UdJQEB/wQM
-# MAoGCCsGAQUFBwMIMCAGA1UdIAQZMBcwCAYGZ4EMAQQCMAsGCWCGSAGG/WwHATAf
-# BgNVHSMEGDAWgBS6FtltTYUvcyl2mi91jGogj57IbzAdBgNVHQ4EFgQUYore0GH8
-# jzEU7ZcLzT0qlBTfUpwwWgYDVR0fBFMwUTBPoE2gS4ZJaHR0cDovL2NybDMuZGln
-# aWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZEc0UlNBNDA5NlNIQTI1NlRpbWVTdGFt
-# cGluZ0NBLmNybDCBkAYIKwYBBQUHAQEEgYMwgYAwJAYIKwYBBQUHMAGGGGh0dHA6
-# Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBYBggrBgEFBQcwAoZMaHR0cDovL2NhY2VydHMu
-# ZGlnaWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZEc0UlNBNDA5NlNIQTI1NlRpbWVT
-# dGFtcGluZ0NBLmNydDANBgkqhkiG9w0BAQsFAAOCAgEAVaoqGvNG83hXNzD8deNP
-# 1oUj8fz5lTmbJeb3coqYw3fUZPwV+zbCSVEseIhjVQlGOQD8adTKmyn7oz/AyQCb
-# Ex2wmIncePLNfIXNU52vYuJhZqMUKkWHSphCK1D8G7WeCDAJ+uQt1wmJefkJ5ojO
-# fRu4aqKbwVNgCeijuJ3XrR8cuOyYQfD2DoD75P/fnRCn6wC6X0qPGjpStOq/CUkV
-# NTZZmg9U0rIbf35eCa12VIp0bcrSBWcrduv/mLImlTgZiEQU5QpZomvnIj5EIdI/
-# HMCb7XxIstiSDJFPPGaUr10CU+ue4p7k0x+GAWScAMLpWnR1DT3heYi/HAGXyRkj
-# gNc2Wl+WFrFjDMZGQDvOXTXUWT5Dmhiuw8nLw/ubE19qtcfg8wXDWd8nYiveQclT
-# uf80EGf2JjKYe/5cQpSBlIKdrAqLxksVStOYkEVgM4DgI974A6T2RUflzrgDQkfo
-# QTZxd639ouiXdE4u2h4djFrIHprVwvDGIqhPm73YHJpRxC+a9l+nJ5e6li6FV8Bg
-# 53hWf2rvwpWaSxECyIKcyRoFfLpxtU56mWz06J7UWpjIn7+NuxhcQ/XQKujiYu54
-# BNu90ftbCqhwfvCXhHjjCANdRyxjqCU4lwHSPzra5eX25pvcfizM/xdMTQCi2NYB
-# DriL7ubgclWJLCcZYfZ3AYwwggcCMIIE6qADAgECAhABZnISBJVCuLLqeeLTB6xE
-# MA0GCSqGSIb3DQEBCwUAMGkxCzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2Vy
-# dCwgSW5jLjFBMD8GA1UEAxM4RGlnaUNlcnQgVHJ1c3RlZCBHNCBDb2RlIFNpZ25p
-# bmcgUlNBNDA5NiBTSEEzODQgMjAyMSBDQTEwHhcNMjExMjAyMDAwMDAwWhcNMjQx
-# MjIwMjM1OTU5WjCBhjELMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWEx
-# FjAUBgNVBAcTDU1pc3Npb24gVmllam8xJDAiBgNVBAoTG1JpY2hhcmQgTS4gSGlj
-# a3MgQ29uc3VsdGluZzEkMCIGA1UEAxMbUmljaGFyZCBNLiBIaWNrcyBDb25zdWx0
-# aW5nMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEA6svrVqBRBbazEkrm
-# htz7h05LEBIHp8fGlV19nY2gpBLnkDR8Mz/E9i1cu0sdjieC4D4/WtI4/NeiR5id
-# tBgtdek5eieRjPcn8g9Zpl89KIl8NNy1UlOWNV70jzzqZ2CYiP/P5YGZwPy8Lx5r
-# IAOYTJM6EFDBvZNti7aRizE7lqVXBDNzyeHhfXYPBxaQV2It+sWqK0saTj0oNA2I
-# u9qSYaFQLFH45VpletKp7ded2FFJv2PKmYrzYtax48xzUQq2rRC5BN2/n7771NDf
-# J0t8udRhUBqTEI5Z1qzMz4RUVfgmGPT+CaE55NyBnyY6/A2/7KSIsOYOcTgzQhO4
-# jLmjTBZ2kZqLCOaqPbSmq/SutMEGHY1MU7xrWUEQinczjUzmbGGw7V87XI9sn8Ec
-# WX71PEvI2Gtr1TJfnT9betXDJnt21mukioLsUUpdlRmMbn23or/VHzE6Nv7Kzx+t
-# A1sBdWdC3Mkzaw/Mm3X8Wc7ythtXGBcLmBagpMGCCUOk6OJZAgMBAAGjggIGMIIC
-# AjAfBgNVHSMEGDAWgBRoN+Drtjv4XxGG+/5hewiIZfROQjAdBgNVHQ4EFgQUxF7d
-# o+eIG9wnEUVjckZ9MsbZ+4kwDgYDVR0PAQH/BAQDAgeAMBMGA1UdJQQMMAoGCCsG
-# AQUFBwMDMIG1BgNVHR8Ega0wgaowU6BRoE+GTWh0dHA6Ly9jcmwzLmRpZ2ljZXJ0
-# LmNvbS9EaWdpQ2VydFRydXN0ZWRHNENvZGVTaWduaW5nUlNBNDA5NlNIQTM4NDIw
-# MjFDQTEuY3JsMFOgUaBPhk1odHRwOi8vY3JsNC5kaWdpY2VydC5jb20vRGlnaUNl
-# cnRUcnVzdGVkRzRDb2RlU2lnbmluZ1JTQTQwOTZTSEEzODQyMDIxQ0ExLmNybDA+
-# BgNVHSAENzA1MDMGBmeBDAEEATApMCcGCCsGAQUFBwIBFhtodHRwOi8vd3d3LmRp
-# Z2ljZXJ0LmNvbS9DUFMwgZQGCCsGAQUFBwEBBIGHMIGEMCQGCCsGAQUFBzABhhho
-# dHRwOi8vb2NzcC5kaWdpY2VydC5jb20wXAYIKwYBBQUHMAKGUGh0dHA6Ly9jYWNl
-# cnRzLmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydFRydXN0ZWRHNENvZGVTaWduaW5nUlNB
-# NDA5NlNIQTM4NDIwMjFDQTEuY3J0MAwGA1UdEwEB/wQCMAAwDQYJKoZIhvcNAQEL
-# BQADggIBAEvHt/OKalRysHQdx4CXSOcgoayuFXWNwi/VFcFr2EK37Gq71G4AtdVc
-# WNLu+whhYzfCVANBnbTa9vsk515rTM06exz0QuMwyg09mo+VxZ8rqOBHz33xZyCo
-# Ttw/+D/SQxiO8uQR0Oisfb1MUHPqDQ69FTNqIQF/RzC2zzUn5agHFULhby8wbjQf
-# Ut2FXCRlFULPzvp7/+JS4QAJnKXq5mYLvopWsdkbBn52Kq+ll8efrj1K4iMRhp3a
-# 0n2eRLetqKJjOqT335EapydB4AnphH2WMQBHHroh5n/fv37dCCaYaqo9JlFnRIrH
-# U7pHBBEpUGfyecFkcKFwsPiHXE1HqQJCPmMbvPdV9ZgtWmuaRD0EQW13JzDyoQdJ
-# xQZSXJhDDL+VSFS8SRNPtQFPisZa2IO58d1Cvf5G8iK1RJHN/Qx413lj2JSS1o3w
-# gNM3Q5ePFYXcQ0iPxjFYlRYPAaDx8t3olg/tVK8sSpYqFYF99IRqBNixhkyxAyVC
-# k6uLBLgwE9egJg1AFoHEdAeabGgT2C0hOyz55PNoDZutZB67G+WN8kGtFYULBloR
-# KHJJiFn42bvXfa0Jg1jZ41AAsMc5LUNlqLhIj/RFLinDH9l4Yb0ddD4wQVsIFDVl
-# JgDPXA9E1Sn8VKrWE4I0sX4xXUFgjfuVfdcNk9Q+4sJJ1YHYGmwLMYIFwjCCBb4C
-# AQEwfTBpMQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xQTA/
-# BgNVBAMTOERpZ2lDZXJ0IFRydXN0ZWQgRzQgQ29kZSBTaWduaW5nIFJTQTQwOTYg
-# U0hBMzg0IDIwMjEgQ0ExAhABZnISBJVCuLLqeeLTB6xEMAkGBSsOAwIaBQCgeDAY
-# BgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3
-# AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEW
-# BBQqZ9voc3yMUVn5rnSjVA2Bha1MxzANBgkqhkiG9w0BAQEFAASCAYCuJ1m1s8n0
-# p9igTsEqg+eMSQxxDM9hstAdBohutq2B6RNLSh7WVYogBVfuhkVGXnjOJlQU/dSm
-# OYRwhYPQeLneDZuJz5ykxmwU4RW+HwOyk1hOHbygCcWQTSb2wcxvbsqR3OPFd5LY
-# cCeT0iLJ3e1UkjV/OkR2p6m1W1Nwd5Xa/pgRzKUwWgemzu9qyov0nTQrG9NeMjAn
-# 4RbTxt6EbY7jRoByeajxaKO8/IxFOrHUG0acD/XqnVKd5dsnaqC7h4EayABPxerW
-# MpSZaeFWk+PobaJOEGPITVakKw7EMEHuwIh7bT0NTFa6WNXx5rqBvHMHEuoRxwJL
-# SIToiz3ZwKweGomV6KFvshcFRjUT9NapSm+Fm2r4H14yBkMnt+anfhVROMgnyl3x
-# wKwckNGA9s2c2MZHbEiQXvNgHuF1AG595SFkl78YnW7PFpaETh1ht/0vPXu7N9rl
-# oShX9K7/+KX1Ywh3S48NtHo9kqhHR7ewOLWfNdBlcC9U/Po4/PgRCxehggMgMIID
-# HAYJKoZIhvcNAQkGMYIDDTCCAwkCAQEwdzBjMQswCQYDVQQGEwJVUzEXMBUGA1UE
-# ChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQg
-# UlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENBAhAMTWlyS5T6PCpKPSkHgD1a
-# MA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkq
-# hkiG9w0BCQUxDxcNMjMwMzMxMTY1ODM2WjAvBgkqhkiG9w0BCQQxIgQggckSj+zL
-# 8Nabg95XBCS0mJwh+JUDr4ltaa7f1lSLzuYwDQYJKoZIhvcNAQEBBQAEggIApcRv
-# o41u4vlIWUDzyxfI6vwxs1WliK1rQVafAQwXnBtvAdwZ4Yp4AYS7w6/F4fefztku
-# xCNyH0F+mOvbIhF+hxwp96yFAqd3xt6GgL152WdoEM0hf1F+nNJd8HVN56JQXDe3
-# 3/f9teEROuS1alpuOuRSyJ0ATn7a92LfOToRjv1yTlttMprpKFxWUEN8Rtghx4YU
-# CziU3/5qry1NbbF2I4qhX+alXmeuuHlQfkrfkxPwsPXAgB2+ueU+b8R1nMzOZSlv
-# 5ruiUvuInaAmzyT8H6g9xm6J/SqU5usYHlvM7r0SHMZBBI3Gazgl8q4OUwuOTIK7
-# L6z42hwhFBKyVw1pixCr0kCvUhBsRe1OdAFnzmG7oHKABjmcDW2Tl66rUZRwRqUL
-# kPtMKrpykQ7+kQsJ2f0gCSR14XEiTWR/ubwCSV9QSWMimFLm9T3OkhRqYiT9EwYy
-# NGSYDKwSmvNu6zm170s+s06fz1x2bUD9onAoeCyHP3XxLYYz6y6rU2ZZoJwTIsvu
-# 67ySAJzjcV2F+AyqUOXrrH/j+O1r6zsDZIQ9xzw4HgUcbvPRFsMi7dTXvR53uaoj
-# qkN2tiv9gfxpJXCQK3lHYXA5/01c3YkByJFsNT9I/sTZcDGHY4oRdtYYUGDebW3d
-# CdikQ3lCSVd9TFt5PUa6Uuejo5zmTHpF4rjub0Q=
+# IFRpbWVTdGFtcGluZyBDQTAeFw0yMzA3MTQwMDAwMDBaFw0zNDEwMTMyMzU5NTla
+# MEgxCzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjEgMB4GA1UE
+# AxMXRGlnaUNlcnQgVGltZXN0YW1wIDIwMjMwggIiMA0GCSqGSIb3DQEBAQUAA4IC
+# DwAwggIKAoICAQCjU0WHHYOOW6w+VLMj4M+f1+XS512hDgncL0ijl3o7Kpxn3GIV
+# WMGpkxGnzaqyat0QKYoeYmNp01icNXG/OpfrlFCPHCDqx5o7L5Zm42nnaf5bw9Yr
+# IBzBl5S0pVCB8s/LB6YwaMqDQtr8fwkklKSCGtpqutg7yl3eGRiF+0XqDWFsnf5x
+# XsQGmjzwxS55DxtmUuPI1j5f2kPThPXQx/ZILV5FdZZ1/t0QoRuDwbjmUpW1R9d4
+# KTlr4HhZl+NEK0rVlc7vCBfqgmRN/yPjyobutKQhZHDr1eWg2mOzLukF7qr2JPUd
+# vJscsrdf3/Dudn0xmWVHVZ1KJC+sK5e+n+T9e3M+Mu5SNPvUu+vUoCw0m+PebmQZ
+# BzcBkQ8ctVHNqkxmg4hoYru8QRt4GW3k2Q/gWEH72LEs4VGvtK0VBhTqYggT02ke
+# fGRNnQ/fztFejKqrUBXJs8q818Q7aESjpTtC/XN97t0K/3k0EH6mXApYTAA+hWl1
+# x4Nk1nXNjxJ2VqUk+tfEayG66B80mC866msBsPf7Kobse1I4qZgJoXGybHGvPrhv
+# ltXhEBP+YUcKjP7wtsfVx95sJPC/QoLKoHE9nJKTBLRpcCcNT7e1NtHJXwikcKPs
+# CvERLmTgyyIryvEoEyFJUX4GZtM7vvrrkTjYUQfKlLfiUKHzOtOKg8tAewIDAQAB
+# o4IBizCCAYcwDgYDVR0PAQH/BAQDAgeAMAwGA1UdEwEB/wQCMAAwFgYDVR0lAQH/
+# BAwwCgYIKwYBBQUHAwgwIAYDVR0gBBkwFzAIBgZngQwBBAIwCwYJYIZIAYb9bAcB
+# MB8GA1UdIwQYMBaAFLoW2W1NhS9zKXaaL3WMaiCPnshvMB0GA1UdDgQWBBSltu8T
+# 5+/N0GSh1VapZTGj3tXjSTBaBgNVHR8EUzBRME+gTaBLhklodHRwOi8vY3JsMy5k
+# aWdpY2VydC5jb20vRGlnaUNlcnRUcnVzdGVkRzRSU0E0MDk2U0hBMjU2VGltZVN0
+# YW1waW5nQ0EuY3JsMIGQBggrBgEFBQcBAQSBgzCBgDAkBggrBgEFBQcwAYYYaHR0
+# cDovL29jc3AuZGlnaWNlcnQuY29tMFgGCCsGAQUFBzAChkxodHRwOi8vY2FjZXJ0
+# cy5kaWdpY2VydC5jb20vRGlnaUNlcnRUcnVzdGVkRzRSU0E0MDk2U0hBMjU2VGlt
+# ZVN0YW1waW5nQ0EuY3J0MA0GCSqGSIb3DQEBCwUAA4ICAQCBGtbeoKm1mBe8cI1P
+# ijxonNgl/8ss5M3qXSKS7IwiAqm4z4Co2efjxe0mgopxLxjdTrbebNfhYJwr7e09
+# SI64a7p8Xb3CYTdoSXej65CqEtcnhfOOHpLawkA4n13IoC4leCWdKgV6hCmYtld5
+# j9smViuw86e9NwzYmHZPVrlSwradOKmB521BXIxp0bkrxMZ7z5z6eOKTGnaiaXXT
+# UOREEr4gDZ6pRND45Ul3CFohxbTPmJUaVLq5vMFpGbrPFvKDNzRusEEm3d5al08z
+# jdSNd311RaGlWCZqA0Xe2VC1UIyvVr1MxeFGxSjTredDAHDezJieGYkD6tSRN+9N
+# UvPJYCHEVkft2hFLjDLDiOZY4rbbPvlfsELWj+MXkdGqwFXjhr+sJyxB0JozSqg2
+# 1Llyln6XeThIX8rC3D0y33XWNmdaifj2p8flTzU8AL2+nCpseQHc2kTmOt44Owde
+# OVj0fHMxVaCAEcsUDH6uvP6k63llqmjWIso765qCNVcoFstp8jKastLYOrixRoZr
+# uhf9xHdsFWyuq69zOuhJRrfVf8y2OMDY7Bz1tqG4QyzfTkx9HmhwwHcK1ALgXGC7
+# KP845VJa1qwXIiNO9OzTF/tQa/8Hdx9xl0RBybhG02wyfFgvZ0dl5Rtztpn5aywG
+# Ru9BHvDwX+Db2a2QgESvgBBBijCCBwIwggTqoAMCAQICEAFmchIElUK4sup54tMH
+# rEQwDQYJKoZIhvcNAQELBQAwaTELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lD
+# ZXJ0LCBJbmMuMUEwPwYDVQQDEzhEaWdpQ2VydCBUcnVzdGVkIEc0IENvZGUgU2ln
+# bmluZyBSU0E0MDk2IFNIQTM4NCAyMDIxIENBMTAeFw0yMTEyMDIwMDAwMDBaFw0y
+# NDEyMjAyMzU5NTlaMIGGMQswCQYDVQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5p
+# YTEWMBQGA1UEBxMNTWlzc2lvbiBWaWVqbzEkMCIGA1UEChMbUmljaGFyZCBNLiBI
+# aWNrcyBDb25zdWx0aW5nMSQwIgYDVQQDExtSaWNoYXJkIE0uIEhpY2tzIENvbnN1
+# bHRpbmcwggGiMA0GCSqGSIb3DQEBAQUAA4IBjwAwggGKAoIBgQDqy+tWoFEFtrMS
+# SuaG3PuHTksQEgenx8aVXX2djaCkEueQNHwzP8T2LVy7Sx2OJ4LgPj9a0jj816JH
+# mJ20GC116Tl6J5GM9yfyD1mmXz0oiXw03LVSU5Y1XvSPPOpnYJiI/8/lgZnA/Lwv
+# HmsgA5hMkzoQUMG9k22LtpGLMTuWpVcEM3PJ4eF9dg8HFpBXYi36xaorSxpOPSg0
+# DYi72pJhoVAsUfjlWmV60qnt153YUUm/Y8qZivNi1rHjzHNRCratELkE3b+fvvvU
+# 0N8nS3y51GFQGpMQjlnWrMzPhFRV+CYY9P4JoTnk3IGfJjr8Db/spIiw5g5xODNC
+# E7iMuaNMFnaRmosI5qo9tKar9K60wQYdjUxTvGtZQRCKdzONTOZsYbDtXztcj2yf
+# wRxZfvU8S8jYa2vVMl+dP1t61cMme3bWa6SKguxRSl2VGYxufbeiv9UfMTo2/srP
+# H60DWwF1Z0LcyTNrD8ybdfxZzvK2G1cYFwuYFqCkwYIJQ6To4lkCAwEAAaOCAgYw
+# ggICMB8GA1UdIwQYMBaAFGg34Ou2O/hfEYb7/mF7CIhl9E5CMB0GA1UdDgQWBBTE
+# Xt2j54gb3CcRRWNyRn0yxtn7iTAOBgNVHQ8BAf8EBAMCB4AwEwYDVR0lBAwwCgYI
+# KwYBBQUHAwMwgbUGA1UdHwSBrTCBqjBToFGgT4ZNaHR0cDovL2NybDMuZGlnaWNl
+# cnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZEc0Q29kZVNpZ25pbmdSU0E0MDk2U0hBMzg0
+# MjAyMUNBMS5jcmwwU6BRoE+GTWh0dHA6Ly9jcmw0LmRpZ2ljZXJ0LmNvbS9EaWdp
+# Q2VydFRydXN0ZWRHNENvZGVTaWduaW5nUlNBNDA5NlNIQTM4NDIwMjFDQTEuY3Js
+# MD4GA1UdIAQ3MDUwMwYGZ4EMAQQBMCkwJwYIKwYBBQUHAgEWG2h0dHA6Ly93d3cu
+# ZGlnaWNlcnQuY29tL0NQUzCBlAYIKwYBBQUHAQEEgYcwgYQwJAYIKwYBBQUHMAGG
+# GGh0dHA6Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBcBggrBgEFBQcwAoZQaHR0cDovL2Nh
+# Y2VydHMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZEc0Q29kZVNpZ25pbmdS
+# U0E0MDk2U0hBMzg0MjAyMUNBMS5jcnQwDAYDVR0TAQH/BAIwADANBgkqhkiG9w0B
+# AQsFAAOCAgEAS8e384pqVHKwdB3HgJdI5yChrK4VdY3CL9UVwWvYQrfsarvUbgC1
+# 1VxY0u77CGFjN8JUA0GdtNr2+yTnXmtMzTp7HPRC4zDKDT2aj5XFnyuo4EfPffFn
+# IKhO3D/4P9JDGI7y5BHQ6Kx9vUxQc+oNDr0VM2ohAX9HMLbPNSflqAcVQuFvLzBu
+# NB9S3YVcJGUVQs/O+nv/4lLhAAmcpermZgu+ilax2RsGfnYqr6WXx5+uPUriIxGG
+# ndrSfZ5Et62oomM6pPffkRqnJ0HgCemEfZYxAEceuiHmf9+/ft0IJphqqj0mUWdE
+# isdTukcEESlQZ/J5wWRwoXCw+IdcTUepAkI+Yxu891X1mC1aa5pEPQRBbXcnMPKh
+# B0nFBlJcmEMMv5VIVLxJE0+1AU+KxlrYg7nx3UK9/kbyIrVEkc39DHjXeWPYlJLW
+# jfCA0zdDl48VhdxDSI/GMViVFg8BoPHy3eiWD+1UryxKlioVgX30hGoE2LGGTLED
+# JUKTq4sEuDAT16AmDUAWgcR0B5psaBPYLSE7LPnk82gNm61kHrsb5Y3yQa0VhQsG
+# WhEockmIWfjZu9d9rQmDWNnjUACwxzktQ2WouEiP9EUuKcMf2XhhvR10PjBBWwgU
+# NWUmAM9cD0TVKfxUqtYTgjSxfjFdQWCN+5V91w2T1D7iwknVgdgabAsxggXCMIIF
+# vgIBATB9MGkxCzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjFB
+# MD8GA1UEAxM4RGlnaUNlcnQgVHJ1c3RlZCBHNCBDb2RlIFNpZ25pbmcgUlNBNDA5
+# NiBTSEEzODQgMjAyMSBDQTECEAFmchIElUK4sup54tMHrEQwCQYFKw4DAhoFAKB4
+# MBgGCisGAQQBgjcCAQwxCjAIoAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQB
+# gjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkE
+# MRYEFM4XrXHbhmqSjURe1J3am4sfrPbWMA0GCSqGSIb3DQEBAQUABIIBgHG1ZrMC
+# 7+xITTkNbJPmKQ9AYufJq6i7AgP4Lr4c2dh7LQTiUodjTTejhZasuJkpvVXi8ycB
+# feN4niSMp9gOnuFcoxloiLl7B2dJK8+Pq93SVPDosA+slFDNwpIvABNxZultOoua
+# 51w/UHJuE4lVMaJ9nKCO/g6G93zaoYlDhk1KuSKSzzh97ZiTcO/1KVDdZU+IqQst
+# 9oVMUb9Z/dp7FYd8Wmn1PLduduxRAQcIU7t2rNmkLzJXg8rEwiC0fa/uaBCzfOu2
+# 2tNf+6NEYSMnvclzCi7sQ3u1+nUGrrLkVKlrOMtpQzYK4WcgTfWDIfZNLVBzzBzp
+# 6eiSnFqyHM3R8KVixkdnUvmjzJqS17i5tET3XqwuNiFKuR1KLhbW1UliDKB/eLjY
+# 4H+pUaSEHzl/cVwBUrPkdaJ/feFYlA8IkDeQ0jUHLmuVhAJwnSqxvsh32XyB5P/d
+# GTK2I8rZWAPBFXmJJ2TNgRWqBH/nACoWyQSBQc742QI9hzbtGR1gZGDuzKGCAyAw
+# ggMcBgkqhkiG9w0BCQYxggMNMIIDCQIBATB3MGMxCzAJBgNVBAYTAlVTMRcwFQYD
+# VQQKEw5EaWdpQ2VydCwgSW5jLjE7MDkGA1UEAxMyRGlnaUNlcnQgVHJ1c3RlZCBH
+# NCBSU0E0MDk2IFNIQTI1NiBUaW1lU3RhbXBpbmcgQ0ECEAVEr/OUnQg5pr/bP1/l
+# YRYwDQYJYIZIAWUDBAIBBQCgaTAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcBMBwG
+# CSqGSIb3DQEJBTEPFw0yMzExMTUyMjAyMzBaMC8GCSqGSIb3DQEJBDEiBCCC0IJX
+# Xrf3xqkDIMHwQahC/fNWKouoHGNvm0dUHk9aAzANBgkqhkiG9w0BAQEFAASCAgBQ
+# ff1hZmF9LRd968Yt9MiPqz4WNCwxZ2MNDkWmCl49yynXb10h1r0vVCxxkljPZuZp
+# W3qWyc8V7H3dj3EZvIoMCZvS/kWChBjl6xxcyEfYiPqvbE842AQA95AuaEfOKErN
+# rk6BDn9W25VDTDNMfayqALe/32Tr7sUNPm9s276WGOhO/AJ4JIxz6OA562bn49uw
+# Lb5CLF/DeJhU9Nyu4EExNCsFTaoFIDLj9Ynl5tXOGWnc8CGTawHKjd5dgvU9By+E
+# TICm4Eo0zUhBDLOd88qNYsENO4wr0r4p2EoKXOGBUXzWiGkXV6jJQtl3MtWdsxgl
+# OZYOUBuAXKiLNRDA8gDFskfMrdSplQWdNRdJLYxoAsfmmb1WA7VAjkQW7c8MZ1an
+# 3UpkcF3Rp6tYRwuBvske47m2NfqNDdjxZt5yE6NAVEQ3WvvcBnKMSG9wmMXKO9v/
+# 0oNj62biNTMxQtfpfEmbva3n2AkmdATQJd/q8j6gvddbAsod4iZjakK9WwEXwroL
+# 2E/RHSD1eZgJvWGQksp4wyKT4WtaQ6dkCB7DSDMZPh9awbdeIrRwxjYRp77pbrAG
+# TKiVH2tnJwZmdo7BuUIDy+vArF4kAFUv+1XFuUJ5AC+c7/oMYIKvzw+WwTwAuxJH
+# FqNt78u1vf+uIAd5u8rKLeSG5XNB1+SY9UlMG1UlRg==
 # SIG # End signature block
