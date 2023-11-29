@@ -19,6 +19,7 @@
    <IPv6InterfaceMetric>3</IPv6InterfaceMetric>
    <NetworkOutageTime>0</NetworkOutageTime>
    <UseRasCredentials>false</UseRasCredentials>
+   <PrivateNetwork>true</PrivateNetwork>
    <!-- End settings -->
    <NativeProfile>
       <Servers>vpn.example.net</Servers>
