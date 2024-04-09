@@ -30,7 +30,9 @@
          <!-- The machine EAP method must be present when deploying XML with Intune to Windows 11 devices -->
          <MachineMethod>Eap</MachineMethod>
          <Eap>
-            <Configuration>               <!-- Use Get-EapConfiguration.ps1 (https://rmhci.co/2UqQ3jz) to extract EAP configuration from existing connection and paste file contents here! --></Configuration>
+            <Configuration>
+            <!-- Use Get-EapConfiguration.ps1 (https://rmhci.co/2UqQ3jz) to extract EAP configuration from existing connection and paste file contents here! -->
+            </Configuration>
          </Eap>
       </Authentication>
       <!-- The recommended routing policy type is SplitTunnel. However, ForceTunnel can be enabled if required. Details here: https://rmhci.co/2VrLDay. -->
@@ -46,9 +48,9 @@
          <DHGroup>Group14</DHGroup>
          <IntegrityCheckMethod>SHA256</IntegrityCheckMethod>
          <EncryptionMethod>AES_GCM_128</EncryptionMethod>
+      </CryptographySuite>
       <!-- The DisableClassBasedDefaultRoute setting is optional but recommended. -->
       <DisableClassBasedDefaultRoute>true</DisableClassBasedDefaultRoute>
-      </CryptographySuite>
    </NativeProfile>
    <!-- The Route setting is required when DisableClassBasedDefaultRoute is set to "true". -->
    <!-- All RFC 1918 private IP address networks are shown here as an example. -->
