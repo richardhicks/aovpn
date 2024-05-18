@@ -16,7 +16,8 @@
    <PrivateNetwork>true</PrivateNetwork>
    <!-- End settings -->
    <NativeProfile>
-      <Servers>vpn.example.com</Servers>
+      <!-- The VPN server is listed twice by design. This is required when deploying XML with Intune to Windows 11 devices. Details here: https://rmhci.co/48NTp3e -->
+      <Servers>vpn.example.com;vpn.example.com</Servers>
       <!-- Only SplitTunnel routing policy is supported for the Always On VPN device tunnel. Force tunneling is explicitly not supported. -->
       <RoutingPolicyType>SplitTunnel</RoutingPolicyType>
       <!-- Only IKEv2 is supported for use with the Always On VPN device tunnel. -->
@@ -44,14 +45,17 @@
    <Route>
       <Address>10.21.12.100</Address>
       <PrefixSize>32</PrefixSize>
+      <Metric>1</Metric>
    </Route>
    <Route>
       <Address>10.21.12.101</Address>
       <PrefixSize>32</PrefixSize>
+      <Metric>1</Metric>
    </Route>
    <Route>
       <Address>2001:db8:2112:a867:5309:1843:6572:adfe</Address>
       <PrefixSize>128</PrefixSize>
+      <Metric>1</Metric>
    </Route>
    <!-- The RegisterDNS element is optional and used to register the IP address of the device tunnel VPN connection in internal DNS. If a user tunnel is deployed in conjunction with a device tunnel, this element should only be defined on the device tunnel. -->
    <RegisterDNS>true</RegisterDNS>   
