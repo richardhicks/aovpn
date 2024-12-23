@@ -1,0 +1,36 @@
+#!/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+
+## VARIABLES
+CHECK_PROTO="https" # Hardcode http or https
+CHECK_URL="sra_%7BBA195980-CD49-458b-9E23-C84EE0ADCD75%7D/" # The path to curl on the server being checked
+CHECK_PORT="" # Overwrite port passed by LB if required
+EXP_STATUS="401" # Response Expected from the server
+FQDN="" # Domain header to be passed to Real Server if required
+
+## DO NOT EDIT BELOW
+#Variables passed by ldirectord/haproxy
+#$1 = VIP Address
+#$2 = VIP Port
+#$3 = Real Server IP
+#$4 = Real Server Port
+
+CHECK_IP="${3}"            # $3 is variable assigned an IP
+
+if [[ -n "$CHECK_PORT" ]]; then
+    :
+elif [[ -n "$4" ]]; then
+    CHECK_PORT="$4"
+else 
+    CHECK_PORT="$2"
+fi
+
+if [[ -z ${FQDN} ]]; then
+        CURL_OPTS="-H 'Host: ${FQDN}'"
+fi
+
+if ! curl -s -k -I "${CURL_OPTS}" "${CHECK_PROTO}://${CHECK_IP}:${CHECK_PORT}/${CHECK_URL}" | grep -q "$EXP_STATUS" ; then
+    exit 1 
+fi
+
+exit 0
