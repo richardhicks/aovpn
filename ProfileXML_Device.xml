@@ -1,3 +1,5 @@
+<!-- This is an example Always On VPN XML configuration file. Not all settings will be required. Some are not recommended but documented for reference. -->
+<!-- IMPORTANT! XML element order is critical when deploying XML configuration files using Intune to Windows 11 endpoints! Details here: https://rmhci.co/48NTp3e -->
 <VPNProfile>
    <AlwaysOn>true</AlwaysOn>
    <DeviceTunnel>true</DeviceTunnel>
@@ -6,15 +8,6 @@
    <!-- The following settings are supported in Windows 11 22H2 and later. -->
    <DisableAdvancedOptionsEditButton>true</DisableAdvancedOptionsEditButton>
    <DisableDisconnectButton>true</DisableDisconnectButton>
-   <!-- The following settings are not currently supported in a public release of Windows. However, they are available in current Windows 11 Insider development channel builds. -->
-   <DataEncryption>Max</DataEncryption>
-   <DisableIKEv2Fragmentation>true</DisableIKEv2Fragmentation>
-   <IPv4InterfaceMetric>3</IPv4InterfaceMetric>
-   <IPv6InterfaceMetric>3</IPv6InterfaceMetric>
-   <NetworkOutageTime>0</NetworkOutageTime>
-   <UseRasCredentials>false</UseRasCredentials>
-   <PrivateNetwork>true</PrivateNetwork>
-   <!-- End settings -->
    <NativeProfile>
       <!-- The VPN server is listed twice by design. This is required when deploying XML with Intune to Windows 11 devices. Details here: https://rmhci.co/48NTp3e -->
       <Servers>vpn.example.com;vpn.example.com</Servers>
@@ -59,4 +52,18 @@
    </Route>
    <!-- The RegisterDNS element is optional and used to register the IP address of the device tunnel VPN connection in internal DNS. If a user tunnel is deployed in conjunction with a device tunnel, this element should only be defined on the device tunnel. -->
    <RegisterDNS>true</RegisterDNS>   
+   <!-- The following settings supported in Windows 11 24H2 and later -->
+   <!-- Define Network Outage Time for IKEv2 -->
+   <NetworkOutageTime>0</NetworkOutageTime>
+   <!-- VPN tunnel interface metric settings -->
+   <IPv4InterfaceMetric>3</IPv4InterfaceMetric>
+   <IPv6InterfaceMetric>3</IPv6InterfaceMetric>
+   <!-- Recommend to set to 'false' on Entra-Join only endpoints -->
+   <UseRasCredentials>false</UseRasCredentials>
+   <!-- PPP encryption setting -->   
+   <DataEncryption>Max</DataEncryption>
+   <!-- Enforce Private Windows firewall profile -->
+   <PrivateNetwork>true</PrivateNetwork>
+   <!-- Enable/Disable IKEv2 fragmentation - Recommended setting is 'false' -->
+   <DisableIKEv2Fragmentation>false</DisableIKEv2Fragmentation>
 </VPNProfile>

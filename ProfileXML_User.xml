@@ -1,20 +1,13 @@
+<!-- This is an example Always On VPN XML configuration file. Not all settings will be required. Some are not recommended but documented for reference. -->
+<!-- IMPORTANT! XML element order is critical when deploying XML configuration files using Intune to Windows 11 endpoints! Details here: https://rmhci.co/48NTp3e -->
 <VPNProfile>
    <AlwaysOn>true</AlwaysOn>
-   <DnsSuffix>corp.example.net</DnsSuffix>
+   <DnsSuffix>corp.example.net,finance.example.net,hr.example.net,lab.example.net</DnsSuffix>
    <!-- The TrustedNetworkDetection setting is optional and used to prevent the VPN connection from being established when the device is on the internal network. -->
    <TrustedNetworkDetection>corp.example.net</TrustedNetworkDetection>
    <!-- The following settings are supported in Windows 11 22H2 and later. -->
    <DisableAdvancedOptionsEditButton>true</DisableAdvancedOptionsEditButton>
    <DisableDisconnectButton>true</DisableDisconnectButton>
-   <!-- The following settings are not currently supported in a public release of Windows. However, they are available in current Windows 11 Insider development channel builds. -->
-   <DataEncryption>Max</DataEncryption>
-   <DisableIKEv2Fragmentation>true</DisableIKEv2Fragmentation>
-   <IPv4InterfaceMetric>3</IPv4InterfaceMetric>
-   <IPv6InterfaceMetric>3</IPv6InterfaceMetric>
-   <NetworkOutageTime>0</NetworkOutageTime>
-   <UseRasCredentials>false</UseRasCredentials>
-   <PrivateNetwork>true</PrivateNetwork>
-   <!-- End settings -->
    <NativeProfile>
       <!-- The VPN server is listed twice by design. This is required when deploying XML with Intune to Windows 11 devices. Details here: https://rmhci.co/48NTp3e -->
       <Servers>vpn.example.net;vpn.example.net</Servers>
@@ -29,7 +22,7 @@
          <MachineMethod>Eap</MachineMethod>
          <Eap>
             <Configuration>
-            <!-- Use Get-EapConfiguration.ps1 (https://rmhci.co/2UqQ3jz) to extract EAP configuration from existing connection and paste file contents here! -->
+               <!-- Use Get-EapConfiguration.ps1 (https://rmhci.co/2UqQ3jz) to extract EAP configuration from existing connection and paste file contents here! -->
             </Configuration>
          </Eap>
       </Authentication>
@@ -117,7 +110,7 @@
       <RemotePortRanges>80,443</RemotePortRanges>
       <RemoteAddressRanges>172.16.0.204,172.16.0.205,172.16.0.6</RemoteAddressRanges>
    </TrafficFilter>
-   <!-- The DomainNameInformation setting is optional. It should only be used when the DNS servers configured on the VPN server's network interface cannot resolve internal Active Directory hostnames. -->
+   <!-- The DomainNameInformation setting is optional. It should only be used when the DNS servers configured on the VPN server's network interface cannot resolve internal Active Directory host names. -->
    <!-- More information regarding DNS configuration for Always On VPN can be found here: https://rmhci.co/2F7iQxP. -->
    <DomainNameInformation>
       <DomainName>.corp.example.net</DomainName>
@@ -125,4 +118,18 @@
    </DomainNameInformation>
    <!-- Optional setting to register the endpoint's IP address in internal DNS. When used with the device tunnel use this setting on one connection or the other, not both. -->
    <RegisterDNS>true</RegisterDNS>
+   <!-- The following settings supported in Windows 11 24H2 and later -->
+   <!-- Define Network Outage Time for IKEv2 -->
+   <NetworkOutageTime>0</NetworkOutageTime>
+   <!-- VPN tunnel interface metric settings -->
+   <IPv4InterfaceMetric>3</IPv4InterfaceMetric>
+   <IPv6InterfaceMetric>3</IPv6InterfaceMetric>
+   <!-- Recommend to set to 'false' on Entra-Join only endpoints -->
+   <UseRasCredentials>false</UseRasCredentials>
+   <!-- PPP encryption setting -->   
+   <DataEncryption>Max</DataEncryption>
+   <!-- Enforce Private Windows firewall profile -->
+   <PrivateNetwork>true</PrivateNetwork>
+   <!-- Enable/Disable IKEv2 fragmentation - Recommended setting is 'false' -->
+   <DisableIKEv2Fragmentation>false</DisableIKEv2Fragmentation>
 </VPNProfile>
