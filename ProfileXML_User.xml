@@ -8,6 +8,14 @@
    <!-- The following settings are supported in Windows 11 22H2 and later. -->
    <DisableAdvancedOptionsEditButton>true</DisableAdvancedOptionsEditButton>
    <DisableDisconnectButton>true</DisableDisconnectButton>
+   <!-- Proxy server settings can be explicit (manual) or implicit (automatic). Both are included for reference, but best practice is to use one method only. -->
+   <!-- Proxy server settings only take effect when force tunneling is enabled. These settings are ignored if split tunneling is enabled.Details here: https://rmhci.co/3TIJhTa -->
+   <Proxy>
+      <Manual>
+         <Server>proxy.corp.example.net:8080</Server>
+      </Manual>
+      <AutoConfigUrl>http://proxy.corp.example.net:8080/proxy.pac</AutoConfigUrl>
+   </Proxy>
    <NativeProfile>
       <!-- The VPN server is listed twice by design. This is required when deploying XML with Intune to Windows 11 devices. Details here: https://rmhci.co/48NTp3e -->
       <Servers>vpn.example.net;vpn.example.net</Servers>
