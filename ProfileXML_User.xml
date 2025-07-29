@@ -25,9 +25,9 @@
       <!-- If NativeProtocolType is set to Automatic, SSTP will be used first. Details here: https://rmhci.co/2M8EaIk. -->
       <NativeProtocolType>Automatic</NativeProtocolType>
       <Authentication>
-         <UserMethod>Eap</UserMethod>
+         <UserMethod>EAP</UserMethod>
          <!-- The machine EAP method must be present when deploying XML with Intune to Windows 11 devices -->
-         <MachineMethod>Eap</MachineMethod>
+         <MachineMethod>EAP</MachineMethod>
          <Eap>
             <Configuration>
                <!-- Use Get-EapConfiguration.ps1 (https://rmhci.co/2UqQ3jz) to extract EAP configuration from existing connection and paste file contents here! -->
