@@ -23,6 +23,7 @@
       <!-- If ForceTunnel is enabled, DisableClassBasedDefaultRoute must be set to 'false' or removed the element completely. Also, all Route entries must be removed. -->
       <RoutingPolicyType>SplitTunnel</RoutingPolicyType>
       <!-- If NativeProtocolType is set to Automatic, SSTP will be used first. Details here: https://rmhci.co/2M8EaIk. -->
+      <!-- Beginning with Windows 11 administrators can define 'SSTP' in this field to ensure SSTP is used as the VPN protocol. -->
       <NativeProtocolType>Automatic</NativeProtocolType>
       <Authentication>
          <UserMethod>EAP</UserMethod>
