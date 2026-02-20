@@ -20,7 +20,7 @@
       <!-- The VPN server is listed twice by design. This is required when deploying XML with Intune to Windows 11 devices. Details here: https://rmhci.co/48NTp3e -->
       <Servers>vpn.example.net;vpn.example.net</Servers>
       <!-- The recommended routing policy type is SplitTunnel. However, ForceTunnel can be enabled if required. Details here: https://rmhci.co/2VrLDay. -->
-      <!-- If ForceTunnel is enabled, DisableClassBasedDefaultRoute must be set to 'false' or removed the element completely. Also, all Route entries must be removed. -->
+      <!-- If ForceTunnel is enabled, DisableClassBasedDefaultRoute must be set to 'false' or removed the element completely. Also, all Route entries with the exception of Exclusion Routes must be removed. -->
       <RoutingPolicyType>SplitTunnel</RoutingPolicyType>
       <!-- If NativeProtocolType is set to Automatic, SSTP will be used first. Details here: https://rmhci.co/2M8EaIk. -->
       <!-- Beginning with Windows 11 administrators can define 'SSTP' in this field to ensure SSTP is used as the VPN protocol. -->
@@ -69,6 +69,19 @@
    <Route>
       <Address>2001:db8:2112::</Address>
       <PrefixSize>48</PrefixSize>
+      <Metric>1</Metric>
+   </Route>
+   <!-- Exclusion Routes can be configured to explicitly exempt selected IP routes from the VPN tunnel. Exclusion Routes are often used in combination with Force Tunnel, but can also be used with split tunnel configurations -->
+   <Route>
+      <Address>203.0.113.83</Address>
+      <PrefixSize>32</PrefixSize>
+      <ExclusionRoute>true</ExclusionRoute>
+      <Metric>1</Metric>
+   </Route>
+   <Route>
+      <Address>192.0.2.0</Address>
+      <PrefixSize>24</PrefixSize>
+      <ExclusionRoute>true</ExclusionRoute>
       <Metric>1</Metric>
    </Route>
    <!-- The traffic filter setting is optional, but can be used to implement Zero Trust Network Access (ZTNA). Details here: https://rmhci.co/3evYeUw. -->
@@ -135,7 +148,7 @@
    <IPv6InterfaceMetric>3</IPv6InterfaceMetric>
    <!-- Recommend to set to 'false' on Entra-Join only endpoints -->
    <UseRasCredentials>false</UseRasCredentials>
-   <!-- PPP encryption setting -->   
+   <!-- PPP encryption setting -->
    <DataEncryption>Max</DataEncryption>
    <!-- Enforce Private Windows firewall profile -->
    <PrivateNetwork>true</PrivateNetwork>
