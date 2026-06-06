@@ -168,7 +168,7 @@ Get-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Services\RemoteAccess\Para
 # Document IKE load balancing optimization setting
 Write-Verbose 'Collecting IKE load balancing optimization setting...'
 $Ikev2LoadBalancing = Join-Path -Path $Path -ChildPath ${hostname}_ikev2loadbalancing.txt
-Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\IKEEXT\Parameters' | Select-Object IkeNumEstablishedForInitialQuery | Out-File $Ikev2LoadBalancing.ToLower()    
+Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\IKEEXT\Parameters' | Select-Object IkeNumEstablishedForInitialQuery | Out-File $Ikev2LoadBalancing.ToLower()
 
 # Create gpresult report
 Write-Verbose 'Collecting group policy information...'
@@ -226,8 +226,8 @@ Write-Output "RRAS configuration information has been collected and archived at 
 # SIG # Begin signature block
 # MIIk7AYJKoZIhvcNAQcCoIIk3TCCJNkCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCBOBtBgmwTcxnVS
-# 9H1g+L1NvK2eLXuFy8fPU2ofiAIKc6CCH6YwggWNMIIEdaADAgECAhAOmxiO+dAt
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCCEHcO+WMw7iwKD
+# f+C7cwyEF7Zbpad2vzpnHC/a+he/Z6CCH6YwggWNMIIEdaADAgECAhAOmxiO+dAt
 # 5+/bUOIIQBhaMA0GCSqGSIb3DQEBDAUAMGUxCzAJBgNVBAYTAlVTMRUwEwYDVQQK
 # EwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xJDAiBgNV
 # BAMTG0RpZ2lDZXJ0IEFzc3VyZWQgSUQgUm9vdCBDQTAeFw0yMjA4MDEwMDAwMDBa
@@ -401,24 +401,24 @@ Write-Output "RRAS configuration information has been collected and archived at 
 # IEc0IENvZGUgU2lnbmluZyBSU0E0MDk2IFNIQTM4NCAyMDIxIENBMQIQDsYrSCrm
 # UJuvTRscProh/zANBglghkgBZQMEAgEFAKCBhDAYBgorBgEEAYI3AgEMMQowCKAC
 # gAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsx
-# DjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJBDEiBCC2TN4P6m/HahjThutMr3x/
-# TnImoTZduZSe8YoMm/0TNDALBgcqhkjOPQIBBQAERzBFAiAkEqyzKjuy/6+D+Ezy
-# ZB0t+uC0wY63D8v5rbUiqPDldQIhAMqtWtpTcDHlximLmGOve8PC3vt/abfqrKa+
-# 7ooUINy1oYIDJjCCAyIGCSqGSIb3DQEJBjGCAxMwggMPAgEBMH0waTELMAkGA1UE
+# DjAMBgorBgEEAYI3AgEVMC8GCSqGSIb3DQEJBDEiBCD/NCf42XUlVnKwAsoIsFqa
+# jHA9hMALSmBJ6iA3xigEBDALBgcqhkjOPQIBBQAERzBFAiBfVkzkxacFN4/PKlhL
+# 9pvtEpBDCNtMIN9A8X9OJh4sbwIhAJg3LvcfdRpSVsZKHyctL0VXp4KjoVfmmo6H
+# qwHrvnT2oYIDJjCCAyIGCSqGSIb3DQEJBjGCAxMwggMPAgEBMH0waTELMAkGA1UE
 # BhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMUEwPwYDVQQDEzhEaWdpQ2Vy
 # dCBUcnVzdGVkIEc0IFRpbWVTdGFtcGluZyBSU0E0MDk2IFNIQTI1NiAyMDI1IENB
 # MQIQCoDvGEuN8QWC0cR2p5V0aDANBglghkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJ
-# AzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTI2MDYwMjIxNTEyOVowLwYJ
-# KoZIhvcNAQkEMSIEIMvgc5RP+Sq1SE3uldzjP4s8z56/tCbRbZLskzlvi14NMA0G
-# CSqGSIb3DQEBAQUABIICAGW1SjfvxJOwkS1bicLQLthW4XBr4UjwfxQ3+6fjsVSr
-# 4f4Z09n3/I8p+hwhfv1veBr6A/vkRyA5KQ2pm0JUaMSYX16kXE6JK4WRGgA63VWs
-# 6Bxv6vD2R/PJph9PuJMP0vvWfMrwv4+ylvynmd5sv8YcPIJWZxUKYmLfTflpq+Xo
-# +kOc9HrRivIJuuV3pjrWh/S/bh043cdgg/RKNB9w3XEg+ho4L1Qj9NfHjRfLffip
-# nKB5qRJQOFWFnOY3pc/lKDmchgoEsiUufLKdkoFRcXQRU4MzrItwj5fTV9ZP9JjA
-# 11+g0xDJN00+mGIgcH+wnIvOUSiTPK8U9KWFQfuBDEDGaF3sW/mmZedJg3UXt+gL
-# Kw6Sv3n+z/FnNc4Fk8DerJd8J5oP6nT9b+q8ayDTIu37wD9+EJavdPhMi68yPoNy
-# c4jP7TSz7353v9SGIi8rzkr5J74Gy8M6RPqGQnca2T3U2QA280OJcY0mlnGiXMFm
-# 5RkB6RxToHnt8svA8bt7zGjkw2M0JTVzLoCvyD9FgeRbEfemoMJKpsEUkcAEEbMW
-# g4DAHR1ZNDdjB8g1QK1Ssiq3ECtNO/k3ujlwfVuiB+awaXTpRXMt/B/fy0eJGrpw
-# poQ8ZoOrNie+JjGYxHek1M0iotXOYSYaftA4+xobzqcyvj/mGhwsrJx+37hkn18c
+# AzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTI2MDYwNjAxMTEwN1owLwYJ
+# KoZIhvcNAQkEMSIEIGyQKkG8akUooZtK1VhO8BwdtTDZrIp/cLB2759Tg7RgMA0G
+# CSqGSIb3DQEBAQUABIICAB6gbJItD4SK+J3Vu/0DA6UNFwFfNafPDp8uZ0tMgK4U
+# pwjy5koAJk6YjtO+17YQumu2aDdKKSePB9ppe7xzt4SADnkp1sM31SjdZIKJZtuD
+# BBjQt6USpSmq5T4lx+UsoZ7o2ODrNGzYWVc2jduv1vgWNt3sdZAKam8FR4anxwtD
+# mEpspucWX2uP7FAyNPkMWjZVEQgjbtV6aclQa+s/D7j+osG/9SAebxMuwCxOP02E
+# ifFWXR/t51kHiWy0aW3E1I0r16Tb0Uu2mdEiraIZbMFk6qisP2wPXMnBvlkgJXzN
+# 7LJk3h7WojLjeStbNKCe/vW9DbAClowgnTuVnruye4YvM+RivaaialHGLdUi4n2W
+# tOXiOUENI4Kj9t+4Oz+tvNM73MLSgX6kCT1zxfyJ4guW8Xk5+OA1uONsvJkc6sK4
+# itHejIuuz2fy/nNMOCmcMKciHQrqsbwViGYUUUDU16hYoG5YddmtZHr4JbRfdvrh
+# 0pbJxKdXlsMhmhHOHcaRoRKGbFPF8iRhJ/ch36K4iaJpn0hFCoyDusXCO9zewgtk
+# m6RacWVD4N2H3qhRO7vw4Cv8VAwGNTC7UF1n61ZBjpotY/vlXqJDFopsz4lGOoHd
+# yLx1nMw3/vQIeOijDfbOeWvODqkztxBR+Hs9JfoB08bAzuIFCsRmUUWiUowgsoIO
 # SIG # End signature block
