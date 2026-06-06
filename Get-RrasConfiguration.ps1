@@ -13,9 +13,9 @@
     https://directaccess.richardhicks.com/
 
 .NOTES
-    Version:        2.0.6
+    Version:        2.1
     Creation Date:  August 20, 2018
-    Last Updated:   June 2, 2026
+    Last Updated:   June 5, 2026
     Author:         Richard Hicks
     Organization:   Richard M. Hicks Consulting, Inc.
     Contact:        rich@richardhicks.com
@@ -81,7 +81,7 @@ If ((Get-RemoteAccessAccounting).InboxAccountingStatus -eq 'Enabled') {
         $Command.CommandText = "SELECT name from sys.indexes where name like 'IdxSessionTblState'"
         $Adapter = New-Object -TypeName System.Data.SqlClient.SqlDataAdapter $Command
         $Dataset = New-Object -TypeName System.Data.DataSet
-        $Adapter.Fill($dataset)
+        [void]($Adapter.Fill($dataset))
         $Dataset.Tables[0] | Out-File $InboxAccounting.ToLower()
 
     }
@@ -143,7 +143,7 @@ Invoke-Command -ScriptBlock { ipconfig.exe /all } | Out-File $IpConfig.ToLower()
 # Document network interface bindings
 Write-Verbose 'Collecting network interface binding information...'
 $IfBindings = Join-Path -Path $Path -ChildPath ${hostname}_ifbindings.txt
-Get-NetAdapter | Get-NetAdapterBinding | Sort-Object Name | Out-File $IfBindings.ToLower()
+Get-NetAdapter | Get-NetAdapterBinding | Sort-Object Name, Enabled | Format-Table -GroupBy Name | Out-File $IfBindings.ToLower()
 
 # Document installed certificates
 Write-Verbose 'Collecting certificate information...'
@@ -164,6 +164,11 @@ Get-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Cryptography\AutoEnroll
 Write-Verbose 'Collecting IKEv2 certificate revocation check setting...'
 $Ikev2Revocation = Join-Path -Path $Path -ChildPath ${hostname}_ikev2revocation.txt
 Get-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Services\RemoteAccess\Parameters\Ikev2 | Select-Object CertAuthFlags | Out-File $Ikev2Revocation.ToLower()
+
+# Document IKE load balancing optimization setting
+Write-Verbose 'Collecting IKE load balancing optimization setting...'
+$Ikev2LoadBalancing = Join-Path -Path $Path -ChildPath ${hostname}_ikev2loadbalancing.txt
+Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\IKEEXT\Parameters' | Select-Object IkeNumEstablishedForInitialQuery | Out-File $Ikev2LoadBalancing.ToLower()    
 
 # Create gpresult report
 Write-Verbose 'Collecting group policy information...'
@@ -214,6 +219,9 @@ Get-Volume | Where-Object DriveType -eq Fixed | Select-Object DriveLetter, FileS
 Write-Verbose 'Creating archive...'
 $ArchivePath = Join-Path -Path $PSScriptRoot -ChildPath "${hostname}.zip"
 Compress-Archive -Path $Path -DestinationPath $ArchivePath -CompressionLevel Optimal -Force
+
+# Notify user where the archive is located
+Write-Output "RRAS configuration information has been collected and archived at $ArchivePath"
 
 # SIG # Begin signature block
 # MIIk7AYJKoZIhvcNAQcCoIIk3TCCJNkCAQExDzANBglghkgBZQMEAgEFADB5Bgor
